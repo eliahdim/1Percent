@@ -20,7 +20,8 @@ const transformData = (goals) => {
             data: {
                 label: goal.title,
                 description: goal.description,
-                completed: !!goal.completed
+                completed: !!goal.completed,
+                isRoot: level === 0
             },
         });
 
