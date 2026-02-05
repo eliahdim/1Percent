@@ -12,7 +12,9 @@ const GoalNode = ({ data, isConnectable }) => {
             minWidth: '150px',
             textAlign: 'center',
             boxShadow: '0 4px 6px rgba(0,0,0,0.3)',
-            fontSize: '0.9rem'
+            fontSize: '0.9rem',
+            opacity: data.completed ? 0.5 : 1,
+            transition: 'opacity 0.3s ease-in-out'
         }}>
             <Handle
                 type="target"
