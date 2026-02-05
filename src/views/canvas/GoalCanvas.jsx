@@ -1,4 +1,4 @@
-import React, { useCallback, useRef } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import {
     ReactFlow,
     MiniMap,
@@ -12,6 +12,7 @@ import {
 import '@xyflow/react/dist/style.css';
 import { Layout, GitFork } from 'lucide-react';
 import GoalNode from './GoalNode';
+import GoalDetailsModal from './GoalDetailsModal';
 import { getLayoutedElements } from '../../utils/autoLayout';
 import { useGoalContext } from '../../context/GoalContext';
 import { moveSubtree } from '../../utils/dragLogic';
@@ -26,8 +27,14 @@ const GoalCanvasInner = () => {
     const {
         nodes, setNodes, onNodesChange,
         edges, setEdges, onEdgesChange,
-        addSubgoal
+        addSubgoal, updateGoal
     } = useGoalContext();
+
+    const [selectedGoalForModal, setSelectedGoalForModal] = useState(null);
+
+    const onNodeDoubleClick = useCallback((event, node) => {
+        setSelectedGoalForModal(node);
+    }, []);
 
     const { fitView } = useReactFlow();
     const draggingNodeRef = useRef(null);
@@ -95,6 +102,7 @@ const GoalCanvasInner = () => {
                 onNodeDragStart={onNodeDragStart}
                 onNodeDrag={onNodeDrag}
                 onNodeDragStop={onNodeDragStop}
+                onNodeDoubleClick={onNodeDoubleClick}
                 nodeTypes={nodeTypes}
                 fitView
                 colorMode="dark"
@@ -157,6 +165,14 @@ const GoalCanvasInner = () => {
                     </button>
                 </Panel>
             </ReactFlow>
+
+            {selectedGoalForModal && (
+                <GoalDetailsModal
+                    goal={selectedGoalForModal}
+                    onClose={() => setSelectedGoalForModal(null)}
+                    onUpdate={updateGoal}
+                />
+            )}
         </div>
     );
 };

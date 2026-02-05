@@ -26,11 +26,11 @@ const goalController = {
     try {
       const { id } = req.params;
       const goal = Goal.getTree(Number(id));
-      
+
       if (!goal) {
         return res.status(404).json({ error: 'Goal not found' });
       }
-      
+
       res.json(goal);
     } catch (error) {
       console.error('Error fetching goal:', error);
@@ -46,11 +46,11 @@ const goalController = {
     try {
       const { id } = req.params;
       const parentGoal = Goal.findById(Number(id));
-      
+
       if (!parentGoal) {
         return res.status(404).json({ error: 'Parent goal not found' });
       }
-      
+
       const subgoals = Goal.findByParentId(Number(id));
       res.json(subgoals);
     } catch (error) {
@@ -67,11 +67,11 @@ const goalController = {
   createGoal: (req, res) => {
     try {
       const { title, description, parentId } = req.body;
-      
+
       if (!title || typeof title !== 'string' || title.trim() === '') {
         return res.status(400).json({ error: 'Title is required' });
       }
-      
+
       // If parentId is provided, verify the parent exists
       if (parentId) {
         const parent = Goal.findById(Number(parentId));
@@ -79,13 +79,13 @@ const goalController = {
           return res.status(404).json({ error: 'Parent goal not found' });
         }
       }
-      
+
       const goal = Goal.create({
         title: title.trim(),
         description: description?.trim(),
         parentId: parentId ? Number(parentId) : null
       });
-      
+
       res.status(201).json(goal);
     } catch (error) {
       console.error('Error creating goal:', error);
@@ -102,23 +102,23 @@ const goalController = {
     try {
       const { id } = req.params;
       const { title, description, completed } = req.body;
-      
+
       const existingGoal = Goal.findById(Number(id));
       if (!existingGoal) {
         return res.status(404).json({ error: 'Goal not found' });
       }
-      
+
       // Validate title if provided
       if (title !== undefined && (typeof title !== 'string' || title.trim() === '')) {
         return res.status(400).json({ error: 'Title cannot be empty' });
       }
-      
+
       const updatedGoal = Goal.update(Number(id), {
         title: title?.trim(),
         description: description?.trim(),
         completed
       });
-      
+
       res.json(updatedGoal);
     } catch (error) {
       console.error('Error updating goal:', error);
@@ -133,12 +133,12 @@ const goalController = {
   deleteGoal: (req, res) => {
     try {
       const { id } = req.params;
-      
+
       const existingGoal = Goal.findById(Number(id));
       if (!existingGoal) {
         return res.status(404).json({ error: 'Goal not found' });
       }
-      
+
       Goal.delete(Number(id));
       res.status(204).send();
     } catch (error) {

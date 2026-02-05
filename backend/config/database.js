@@ -25,7 +25,8 @@ const initializeDatabase = () => {
       title TEXT NOT NULL,
       description TEXT,
       parent_id INTEGER,
-      completed INTEGER DEFAULT 0,
+      status TEXT DEFAULT 'Not Started',
+      color TEXT DEFAULT '#var(--bg-secondary)',
       created_at TEXT DEFAULT (datetime('now')),
       updated_at TEXT DEFAULT (datetime('now')),
       FOREIGN KEY (parent_id) REFERENCES goals(id) ON DELETE CASCADE
