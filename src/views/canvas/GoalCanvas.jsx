@@ -82,6 +82,8 @@ const GoalCanvasInner = () => {
         }
     };
 
+    const selectedNode = nodes.find(n => n.selected);
+
     return (
         <div style={{ flex: 1, height: '100%', position: 'relative' }}>
             <ReactFlow
@@ -109,23 +111,29 @@ const GoalCanvasInner = () => {
                 <Panel position="top-right" style={{ display: 'flex', gap: '10px' }}>
                     <button
                         onClick={onAddChild}
+                        title={selectedNode ? `Add subgoal to "${selectedNode.data.label}"` : "Select a goal to add a subgoal"}
                         style={{
                             display: 'flex',
                             alignItems: 'center',
                             gap: '8px',
                             padding: '8px 12px',
-                            background: 'var(--bg-secondary)',
+                            background: selectedNode ? 'var(--bg-secondary)' : 'var(--bg-tertiary)',
                             border: '1px solid var(--border-subtle)',
-                            color: 'var(--text-primary)',
+                            color: selectedNode ? 'var(--text-primary)' : 'var(--text-muted)',
                             borderRadius: '6px',
-                            cursor: 'pointer',
+                            cursor: selectedNode ? 'pointer' : 'not-allowed',
                             fontWeight: '500',
                             fontSize: '0.9rem',
-                            boxShadow: '0 2px 5px rgba(0,0,0,0.2)'
+                            boxShadow: '0 2px 5px rgba(0,0,0,0.2)',
+                            opacity: selectedNode ? 1 : 0.7,
+                            transition: 'all 0.2s'
                         }}
                     >
                         <GitFork size={16} />
-                        Add Subgoal
+                        {selectedNode
+                            ? <span>Add to <strong>{selectedNode.data.label.length > 15 ? selectedNode.data.label.substring(0, 12) + '...' : selectedNode.data.label}</strong></span>
+                            : "Add Subgoal"
+                        }
                     </button>
                     <button
                         onClick={onLayout}

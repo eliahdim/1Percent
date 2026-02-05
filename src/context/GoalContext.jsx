@@ -111,6 +111,15 @@ export const GoalProvider = ({ children }) => {
         }
     }, [refreshGoals]);
 
+    const updateGoal = useCallback(async (id, updates) => {
+        try {
+            await api.updateGoal(id, updates);
+            await refreshGoals();
+        } catch (error) {
+            console.error("Failed to update goal:", error);
+        }
+    }, [refreshGoals]);
+
     // Custom Drag Logic: Move subtree (Placeholder for now, implementation depends on if we want to save position to DB)
     const onNodeDrag = useCallback((event, node, nodes) => {
         // TODO: potential updates
@@ -125,6 +134,7 @@ export const GoalProvider = ({ children }) => {
         onEdgesChange,
         addGoal,
         addSubgoal,
+        updateGoal,
         loading,
         refreshGoals
     };
