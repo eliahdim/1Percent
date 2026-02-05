@@ -29,14 +29,30 @@
 
 ## Installation
 
+### Frontend
+
+```bash
+npm install
+```
+
+### Backend
+
 ```bash
 npm install
 ```
 
 ## Usage
 
+### Frontend
+
 ```bash
 npm run dev
+```
+
+### Backend
+
+```bash
+npm start
 ```
 
 ## License
