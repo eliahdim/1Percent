@@ -1,66 +1,118 @@
-import React, { createContext, useContext, useCallback } from 'react';
-import { useNodesState, useEdgesState, addEdge, applyNodeChanges } from '@xyflow/react';
+import React, { createContext, useContext, useCallback, useEffect, useState } from 'react';
+import { useNodesState, useEdgesState } from '@xyflow/react';
+import { api } from '../services/api';
 
 const GoalContext = createContext();
 
 export const useGoalContext = () => useContext(GoalContext);
 
-const initialNodes = [
-    { id: '1', type: 'goal', position: { x: 250, y: 5 }, data: { label: 'Start 1% Project', description: 'Build the ultimate goal app' } },
-    { id: '2', type: 'goal', position: { x: 100, y: 150 }, data: { label: 'Frontend', description: 'React + Canvas' } },
-    { id: '3', type: 'goal', position: { x: 400, y: 150 }, data: { label: 'Backend', description: 'Node + SQLite' } },
-];
+// Helper to transform backend tree data to React Flow nodes/edges
+const transformData = (goals) => {
+    let nodes = [];
+    let edges = [];
 
-const initialEdges = [
-    { id: 'e1-2', source: '1', target: '2', animated: true },
-    { id: 'e1-3', source: '1', target: '3', animated: true },
-];
+    const traverse = (goal, x = 0, y = 0, level = 0) => {
+        // Create Node
+        nodes.push({
+            id: goal.id.toString(),
+            type: 'goal',
+            position: { x, y: y }, // We might want to use autoLayout later, so initial pos can be somewhat arbitrary or calculated
+            data: {
+                label: goal.title,
+                description: goal.description,
+                completed: !!goal.completed
+            },
+        });
+
+        if (goal.subgoals && goal.subgoals.length > 0) {
+            goal.subgoals.forEach((subgoal, index) => {
+                // Create Edge
+                edges.push({
+                    id: `e${goal.id}-${subgoal.id}`,
+                    source: goal.id.toString(),
+                    target: subgoal.id.toString(),
+                    animated: true
+                });
+
+                // Simple recursive positioning (can be improved by autoLayout)
+                // Spacing children horizontally
+                traverse(subgoal, x + (index * 200) - ((goal.subgoals.length - 1) * 100), y + 200, level + 1);
+            });
+        }
+    };
+
+    goals.forEach((goal, i) => {
+        // Place root goals spaced out
+        traverse(goal, i * 400, 50);
+    });
+
+    return { nodes, edges };
+};
 
 export const GoalProvider = ({ children }) => {
-    const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
-    const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+    const [nodes, setNodes, onNodesChange] = useNodesState([]);
+    const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+    const [loading, setLoading] = useState(true);
 
-    const addGoal = useCallback((label) => {
-        const id = Date.now().toString();
-        const newNode = {
-            id,
-            type: 'goal',
-            position: { x: Math.random() * 400, y: Math.random() * 400 },
-            data: { label, description: 'New Goal' },
-        };
-        setNodes((nds) => [...nds, newNode]);
-    }, [setNodes]);
+    const refreshGoals = useCallback(async () => {
+        try {
+            // setLoading(true); // silent refresh is better for UX if we are just adding
+            const goals = await api.fetchGoals();
+            const { nodes: computedNodes, edges: newEdges } = transformData(goals);
 
-    const addSubgoal = useCallback((parentId) => {
-        const parentNode = nodes.find((n) => n.id === parentId);
-        if (!parentNode) return;
+            setNodes((prevNodes) => {
+                const prevNodeMap = new Map(prevNodes.map(n => [n.id, n]));
 
-        const id = Date.now().toString();
-        const newNode = {
-            id,
-            type: 'goal',
-            position: { x: parentNode.position.x + 50, y: parentNode.position.y + 100 },
-            data: { label: 'New Subgoal', description: 'Actionable step' },
-        };
+                return computedNodes.map(newNode => {
+                    const prevNode = prevNodeMap.get(newNode.id);
+                    if (prevNode) {
+                        return {
+                            ...newNode,
+                            position: prevNode.position,
+                        };
+                    }
+                    return newNode;
+                });
+            });
 
-        const newEdge = {
-            id: `e${parentId}-${id}`,
-            source: parentId,
-            target: id,
-            animated: true
-        };
+            setEdges(newEdges);
+        } catch (error) {
+            console.error("Failed to fetch goals:", error);
+        } finally {
+            setLoading(false);
+        }
+    }, [setNodes, setEdges]);
 
-        setNodes((nds) => [...nds, newNode]);
-        setEdges((eds) => [...eds, newEdge]);
-    }, [nodes, setNodes, setEdges]);
+    // Initial load
+    useEffect(() => {
+        refreshGoals();
+    }, [refreshGoals]);
 
-    // Custom Drag Logic: Move subtree
+    const addGoal = useCallback(async (label) => {
+        try {
+            await api.createGoal({ title: label, description: 'New Goal' });
+            await refreshGoals();
+        } catch (error) {
+            console.error("Failed to create goal:", error);
+        }
+    }, [refreshGoals]);
+
+    const addSubgoal = useCallback(async (parentId) => {
+        try {
+            await api.createGoal({
+                title: 'New Subgoal',
+                description: 'Actionable step',
+                parentId: parentId
+            });
+            await refreshGoals();
+        } catch (error) {
+            console.error("Failed to create subgoal:", error);
+        }
+    }, [refreshGoals]);
+
+    // Custom Drag Logic: Move subtree (Placeholder for now, implementation depends on if we want to save position to DB)
     const onNodeDrag = useCallback((event, node, nodes) => {
-        // This is a simplified placeholder. 
-        // Real recursive drag needs to find children and update their positions 
-        // relative to the movement delta of the parent.
-        // For now, React Flow handles individual node dragging.
-        // We will enhance this in the View component or a specific hook.
+        // TODO: potential updates
     }, []);
 
     const value = {
@@ -71,7 +123,9 @@ export const GoalProvider = ({ children }) => {
         onNodesChange,
         onEdgesChange,
         addGoal,
-        addSubgoal
+        addSubgoal,
+        loading,
+        refreshGoals
     };
 
     return (
