@@ -1,8 +1,8 @@
-# 1% Project
+# 1%
 
 ## Description
 
-1% Project is a web application that helps users to create and manage their goals.
+1% is a web application that helps users to create and manage their goals.
 
 ## Tech Stack
 

@@ -45,8 +45,8 @@ const GoalNode = ({ id, data, isConnectable, selected }) => {
 
     const displayDescription = () => {
         if (!data.description) return <span style={{ opacity: 0.5, fontStyle: 'italic' }}>No description</span>;
-        if (data.description.length <= 100) return data.description;
-        return data.description.substring(0, 100) + '...';
+        if (data.description.length <= 50) return data.description;
+        return data.description.substring(0, 50) + '...';
     };
 
     return (
