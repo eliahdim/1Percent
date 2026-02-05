@@ -5,9 +5,8 @@ import { useGoalContext } from '../../context/GoalContext';
 const Sidebar = () => {
     const { nodes, addGoal } = useGoalContext();
 
-    // In a real tree, we'd filter using graph logic. 
-    // For now we just show all nodes that are goals.
-    const goalNodes = nodes.filter(n => n.type === 'goal');
+    // Only show root goals (isRoot is added in transformData)
+    const goalNodes = nodes.filter(n => n.type === 'goal' && n.data.isRoot);
 
     return (
         <aside style={{
