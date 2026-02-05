@@ -62,7 +62,7 @@ Main Goal
 ## 🔗 Data Flow
 1. The **frontend** (React) sends API requests to the **backend** via REST endpoints.  
 2. The **backend** handles requests using Express controllers.  
-3. Data is stored and retrieved from **SQLite** through Mongoose models.  
+3. Data is stored and retrieved from **SQLite** through Sequelize models.  
 4. The frontend dynamically updates the tree view based on the API responses.
 
 ---
