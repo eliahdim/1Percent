@@ -32,7 +32,7 @@ The entire project follows the **Model–View–Controller** pattern, both in fr
 - **Controller:** Connects user actions (creating, completing, deleting goals) to data updates and backend API calls.
 
 ### Backend (Express)
-- **Model:** Sequelize models defining goal and subgoal structure in SQLite.  
+- **Model:** better-sqlite3 queries defining goal and subgoal structure in SQLite.  
 - **View:** (Not applicable — API-based)  
 - **Controller:** Handles requests from the frontend and communicates with the SQLite database.  
   Routes are kept separate for clean structure, e.g. `routes/goalRoutes.js` calls `controllers/goalController.js`.
@@ -62,7 +62,7 @@ Main Goal
 ## 🔗 Data Flow
 1. The **frontend** (React) sends API requests to the **backend** via REST endpoints.  
 2. The **backend** handles requests using Express controllers.  
-3. Data is stored and retrieved from **SQLite** through Sequelize models.  
+3. Data is stored and retrieved from **SQLite** through better-sqlite3 queries.  
 4. The frontend dynamically updates the tree view based on the API responses.
 
 ---

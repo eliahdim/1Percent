@@ -23,7 +23,7 @@
 
 ### Backend
 
-- Model: Sequelize models defining goal and subgoal structure in SQLite.  
+- Model: better-sqlite3 queries defining goal and subgoal structure in SQLite.  
 - Controller: Handles requests from the frontend and communicates with the SQLite database.  
   Routes are kept separate for clean structure, e.g. `routes/goalRoutes.js` calls `controllers/goalController.js`.
 
@@ -38,6 +38,7 @@ npm install
 ### Backend
 
 ```bash
+cd Backend
 npm install
 ```
 
@@ -52,6 +53,7 @@ npm run dev
 ### Backend
 
 ```bash
+cd Backend
 npm start
 ```
 
