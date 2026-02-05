@@ -1,6 +1,7 @@
 import React, { memo, useState, useCallback } from 'react';
 import { Handle, Position } from '@xyflow/react';
 import { useGoalContext } from '../../context/GoalContext';
+import { useSettings } from '../../context/SettingsContext';
 
 const getStatusColor = (status) => {
     switch (status) {
@@ -12,6 +13,7 @@ const getStatusColor = (status) => {
 
 const GoalNode = ({ id, data, isConnectable, selected }) => {
     const { updateGoal } = useGoalContext();
+    const { settings } = useSettings();
     const [editingField, setEditingField] = useState(null); // 'title' | 'description' | null
     const [editValue, setEditValue] = useState('');
 
@@ -40,6 +42,12 @@ const GoalNode = ({ id, data, isConnectable, selected }) => {
             onFinishEdit();
         }
     }, [onFinishEdit]);
+
+    const displayDescription = () => {
+        if (!data.description) return <span style={{ opacity: 0.5, fontStyle: 'italic' }}>No description</span>;
+        if (data.description.length <= 100) return data.description;
+        return data.description.substring(0, 100) + '...';
+    };
 
     return (
         <div style={{
@@ -82,7 +90,11 @@ const GoalNode = ({ id, data, isConnectable, selected }) => {
             </div>
 
             {/* Title Section */}
-            <div style={{ marginBottom: '8px', display: 'flex', justifyContent: 'center' }}>
+            <div style={{
+                marginBottom: settings.showDescriptions && (data.description || editingField === 'description') ? '8px' : '0',
+                display: 'flex',
+                justifyContent: 'center'
+            }}>
                 {editingField === 'title' ? (
                     <input
                         className="nodrag"
@@ -118,44 +130,46 @@ const GoalNode = ({ id, data, isConnectable, selected }) => {
             </div>
 
             {/* Description Section */}
-            <div style={{ display: 'flex', justifyContent: 'center' }}>
-                {editingField === 'description' ? (
-                    <textarea
-                        className="nodrag"
-                        autoFocus
-                        value={editValue}
-                        onChange={(e) => setEditValue(e.target.value)}
-                        onBlur={onFinishEdit}
-                        onKeyDown={onKeyDown}
-                        style={{
-                            width: '90%',
-                            background: 'rgba(0,0,0,0.2)',
-                            border: '1px solid rgba(255,255,255,0.3)',
-                            color: 'rgba(255,255,255,0.8)',
-                            borderRadius: '4px',
-                            padding: '4px',
-                            fontSize: '0.75rem',
-                            textAlign: 'center',
-                            outline: 'none',
-                            resize: 'none',
-                            minHeight: '40px'
-                        }}
-                    />
-                ) : (
-                    <div
-                        onDoubleClick={(e) => onDoubleClick(e, 'description', data.description)}
-                        style={{
-                            fontSize: data.isRoot ? '0.85rem' : '0.75rem',
-                            color: 'rgba(255,255,255,0.8)',
-                            minHeight: '10px',
-                            cursor: 'text',
-                            display: 'inline-block'
-                        }}
-                    >
-                        {data.description || <span style={{ opacity: 0.5, fontStyle: 'italic' }}>No description</span>}
-                    </div>
-                )}
-            </div>
+            {settings.showDescriptions && (
+                <div style={{ display: 'flex', justifyContent: 'center' }}>
+                    {editingField === 'description' ? (
+                        <textarea
+                            className="nodrag"
+                            autoFocus
+                            value={editValue}
+                            onChange={(e) => setEditValue(e.target.value)}
+                            onBlur={onFinishEdit}
+                            onKeyDown={onKeyDown}
+                            style={{
+                                width: '90%',
+                                background: 'rgba(0,0,0,0.2)',
+                                border: '1px solid rgba(255,255,255,0.3)',
+                                color: 'rgba(255,255,255,0.8)',
+                                borderRadius: '4px',
+                                padding: '4px',
+                                fontSize: '0.75rem',
+                                textAlign: 'center',
+                                outline: 'none',
+                                resize: 'none',
+                                minHeight: '40px'
+                            }}
+                        />
+                    ) : (
+                        <div
+                            onDoubleClick={(e) => onDoubleClick(e, 'description', data.description)}
+                            style={{
+                                fontSize: data.isRoot ? '0.85rem' : '0.75rem',
+                                color: 'rgba(255,255,255,0.8)',
+                                minHeight: '10px',
+                                cursor: 'text',
+                                display: 'inline-block'
+                            }}
+                        >
+                            {displayDescription()}
+                        </div>
+                    )}
+                </div>
+            )}
 
             <Handle
                 type="source"

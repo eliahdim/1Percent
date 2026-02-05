@@ -2,7 +2,7 @@ import React from 'react';
 import { Plus, Settings, Target, ChevronDown, Trophy } from 'lucide-react';
 import { useGoalContext } from '../../context/GoalContext';
 
-const Sidebar = () => {
+const Sidebar = ({ onOpenSettings }) => {
     const { nodes, addGoal } = useGoalContext();
 
     // Only show root goals (isRoot is added in transformData)
@@ -19,11 +19,27 @@ const Sidebar = () => {
             height: '100%'
         }}>
             {/* Header */}
-            <div style={{ padding: '20px', borderBottom: '1px solid var(--border-subtle)' }}>
-                <h1 style={{ fontSize: '1.2rem', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={{ padding: '20px', borderBottom: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <h1 style={{ fontSize: '1.2rem', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '10px', margin: 0 }}>
                     <Trophy size={20} color="var(--accent-primary)" />
                     1%
                 </h1>
+                <button
+                    onClick={onOpenSettings}
+                    style={{
+                        background: 'transparent',
+                        border: 'none',
+                        color: 'var(--text-muted)',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        transition: 'color 0.2s'
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.color = 'var(--text-primary)'}
+                    onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-muted)'}
+                >
+                    <Settings size={20} />
+                </button>
             </div>
 
             {/* Goal List */}
