@@ -105,6 +105,58 @@ const SettingsModal = ({ onClose }) => {
                         </label>
                     </div>
 
+                    {/* Show Status Labels */}
+                    <div style={{
+                        marginTop: '16px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '12px',
+                        background: 'var(--bg-tertiary)',
+                        borderRadius: '8px',
+                        border: '1px solid var(--border-subtle)'
+                    }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            {settings.showStatusLabels ? <Eye size={20} color="var(--accent-primary)" /> : <EyeOff size={20} color="var(--text-muted)" />}
+                            <div>
+                                <div style={{ fontWeight: '600', color: 'var(--text-primary)' }}>Show Status Labels</div>
+                                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Display status badges on goal nodes</div>
+                            </div>
+                        </div>
+                        <label className="switch" style={{ position: 'relative', display: 'inline-block', width: '44px', height: '24px' }}>
+                            <input
+                                type="checkbox"
+                                checked={settings.showStatusLabels}
+                                onChange={(e) => updateSettings({ showStatusLabels: e.target.checked })}
+                                style={{ opacity: 0, width: 0, height: 0 }}
+                            />
+                            <span style={{
+                                position: 'absolute',
+                                cursor: 'pointer',
+                                top: 0,
+                                left: 0,
+                                right: 0,
+                                bottom: 0,
+                                backgroundColor: settings.showStatusLabels ? 'var(--accent-primary)' : '#444',
+                                transition: '.4s',
+                                borderRadius: '24px'
+                            }}>
+                                <span style={{
+                                    position: 'absolute',
+                                    content: '""',
+                                    height: '18px',
+                                    width: '18px',
+                                    left: '3px',
+                                    bottom: '3px',
+                                    backgroundColor: 'white',
+                                    transition: '.4s',
+                                    borderRadius: '50%',
+                                    transform: settings.showStatusLabels ? 'translateX(20px)' : 'translateX(0)'
+                                }}></span>
+                            </span>
+                        </label>
+                    </div>
+
                     {/* Max Description Length */}
                     <div style={{
                         marginTop: '16px',
