@@ -29,7 +29,7 @@ export const api = {
     /**
      * Update a goal
      * @param {number} id 
-     * @param {Object} updates - { title, description, completed }
+     * @param {Object} updates - { title, description, status }
      */
     updateGoal: async (id, updates) => {
         const response = await fetch(`${API_URL}/goals/${id}`, {
