@@ -44,9 +44,10 @@ const GoalNode = ({ id, data, isConnectable, selected }) => {
     }, [onFinishEdit]);
 
     const displayDescription = () => {
+        const maxLength = settings.maxDescriptionLength || 50;
         if (!data.description) return <span style={{ opacity: 0.5, fontStyle: 'italic' }}>No description</span>;
-        if (data.description.length <= 50) return data.description;
-        return data.description.substring(0, 50) + '...';
+        if (data.description.length <= maxLength) return data.description;
+        return data.description.substring(0, maxLength) + '...';
     };
 
     return (

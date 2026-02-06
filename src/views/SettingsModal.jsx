@@ -104,6 +104,46 @@ const SettingsModal = ({ onClose }) => {
                             </span>
                         </label>
                     </div>
+
+                    {/* Max Description Length */}
+                    <div style={{
+                        marginTop: '16px',
+                        padding: '12px',
+                        background: 'var(--bg-tertiary)',
+                        borderRadius: '8px',
+                        border: '1px solid var(--border-subtle)',
+                        opacity: settings.showDescriptions ? 1 : 0.5,
+                        pointerEvents: settings.showDescriptions ? 'auto' : 'none',
+                        transition: 'opacity 0.3s ease'
+                    }}>
+                        <div style={{ marginBottom: '12px' }}>
+                            <div style={{ fontWeight: '600', color: 'var(--text-primary)', display: 'flex', justifyContent: 'space-between' }}>
+                                <span>Description Length</span>
+                                <span style={{ color: 'var(--accent-primary)' }}>{settings.maxDescriptionLength} chars</span>
+                            </div>
+                            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>How much description to show in the tree</div>
+                        </div>
+                        <input
+                            type="range"
+                            min="10"
+                            max="200"
+                            step="5"
+                            value={settings.maxDescriptionLength}
+                            onChange={(e) => updateSettings({ maxDescriptionLength: parseInt(e.target.value) })}
+                            style={{
+                                width: '100%',
+                                accentColor: 'var(--accent-primary)',
+                                height: '6px',
+                                borderRadius: '3px',
+                                outline: 'none',
+                                cursor: 'pointer'
+                            }}
+                        />
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+                            <span>10</span>
+                            <span>200</span>
+                        </div>
+                    </div>
                 </div>
 
                 {/* Footer */}
