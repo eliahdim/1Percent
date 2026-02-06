@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Calendar, Clock, Tag, ChevronDown } from 'lucide-react';
+import { X, Calendar, Clock, Tag } from 'lucide-react';
 
 const STATUS_OPTIONS = ['Not Started', 'In Progress', 'Done'];
 const GoalDetailsModal = ({ goal, onClose, onUpdate }) => {
@@ -105,28 +105,59 @@ const GoalDetailsModal = ({ goal, onClose, onUpdate }) => {
                     {/* Status Row */}
                     <div style={{ marginBottom: '20px' }}>
                         <label style={{ display: 'block', fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: '8px' }}>Status</label>
-                        <div style={{ position: 'relative' }}>
-                            <select
-                                value={status}
-                                onChange={(e) => setStatus(e.target.value)}
-                                style={{
-                                    width: '100%',
-                                    background: 'var(--bg-tertiary)',
-                                    border: '1px solid var(--border-subtle)',
-                                    color: 'var(--text-primary)',
-                                    borderRadius: '6px',
-                                    padding: '10px 12px',
-                                    fontSize: '0.9rem',
-                                    appearance: 'none',
-                                    outline: 'none',
-                                    cursor: 'pointer'
-                                }}
-                            >
-                                {STATUS_OPTIONS.map(opt => (
-                                    <option key={opt} value={opt}>{opt}</option>
-                                ))}
-                            </select>
-                            <ChevronDown size={16} style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'var(--text-muted)' }} />
+                        <div 
+                            role="radiogroup"
+                            aria-label="Status selection"
+                            style={{ 
+                                display: 'flex', 
+                                gap: '8px',
+                                width: '100%'
+                            }}
+                        >
+                            {STATUS_OPTIONS.map(opt => (
+                                <button
+                                    key={opt}
+                                    onClick={() => setStatus(opt)}
+                                    style={{
+                                        flex: 1,
+                                        padding: '10px 12px',
+                                        background: status === opt ? 'var(--accent-primary)' : 'var(--bg-tertiary)',
+                                        border: status === opt ? '1px solid var(--accent-primary)' : '1px solid var(--border-subtle)',
+                                        color: status === opt ? 'white' : 'var(--text-primary)',
+                                        borderRadius: '6px',
+                                        cursor: 'pointer',
+                                        fontSize: '0.9rem',
+                                        fontWeight: status === opt ? '600' : '400',
+                                        outline: 'none',
+                                        transition: 'all 0.2s ease',
+                                        whiteSpace: 'nowrap'
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        if (status !== opt) {
+                                            e.currentTarget.style.background = 'var(--border-focus)';
+                                            e.currentTarget.style.borderColor = 'var(--border-focus)';
+                                        }
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        if (status !== opt) {
+                                            e.currentTarget.style.background = 'var(--bg-tertiary)';
+                                            e.currentTarget.style.borderColor = 'var(--border-subtle)';
+                                        }
+                                    }}
+                                    onFocus={(e) => {
+                                        e.currentTarget.style.outline = '2px solid var(--accent-secondary)';
+                                        e.currentTarget.style.outlineOffset = '2px';
+                                    }}
+                                    onBlur={(e) => {
+                                        e.currentTarget.style.outline = 'none';
+                                    }}
+                                    aria-pressed={status === opt}
+                                    role="radio"
+                                    aria-checked={status === opt}
+                                >
+                                    {opt}
+                                </button>
+                            ))}
                         </div>
                     </div>
 
