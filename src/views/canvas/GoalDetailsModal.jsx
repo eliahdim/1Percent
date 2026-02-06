@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { X, Calendar, Clock, Tag } from 'lucide-react';
+import { X, Calendar, Clock } from 'lucide-react';
 
 const STATUS_OPTIONS = ['Not Started', 'In Progress', 'Done'];
+
 const GoalDetailsModal = ({ goal, onClose, onUpdate }) => {
     const [title, setTitle] = useState(goal?.data?.label || '');
     const [description, setDescription] = useState(goal?.data?.description || '');
@@ -105,59 +106,61 @@ const GoalDetailsModal = ({ goal, onClose, onUpdate }) => {
                     {/* Status Row */}
                     <div style={{ marginBottom: '20px' }}>
                         <label style={{ display: 'block', fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: '8px' }}>Status</label>
-                        <div 
+                        <div
                             role="radiogroup"
                             aria-label="Status selection"
-                            style={{ 
-                                display: 'flex', 
+                            style={{
+                                display: 'flex',
                                 gap: '8px',
                                 width: '100%'
                             }}
                         >
-                            {STATUS_OPTIONS.map(opt => (
-                                <button
-                                    key={opt}
-                                    onClick={() => setStatus(opt)}
-                                    style={{
-                                        flex: 1,
-                                        padding: '10px 12px',
-                                        background: status === opt ? 'var(--accent-primary)' : 'var(--bg-tertiary)',
-                                        border: status === opt ? '1px solid var(--accent-primary)' : '1px solid var(--border-subtle)',
-                                        color: status === opt ? 'white' : 'var(--text-primary)',
-                                        borderRadius: '6px',
-                                        cursor: 'pointer',
-                                        fontSize: '0.9rem',
-                                        fontWeight: status === opt ? '600' : '400',
-                                        outline: 'none',
-                                        transition: 'all 0.2s ease',
-                                        whiteSpace: 'nowrap'
-                                    }}
-                                    onMouseEnter={(e) => {
-                                        if (status !== opt) {
-                                            e.currentTarget.style.background = 'var(--border-focus)';
-                                            e.currentTarget.style.borderColor = 'var(--border-focus)';
-                                        }
-                                    }}
-                                    onMouseLeave={(e) => {
-                                        if (status !== opt) {
-                                            e.currentTarget.style.background = 'var(--bg-tertiary)';
-                                            e.currentTarget.style.borderColor = 'var(--border-subtle)';
-                                        }
-                                    }}
-                                    onFocus={(e) => {
-                                        e.currentTarget.style.outline = '2px solid var(--accent-secondary)';
-                                        e.currentTarget.style.outlineOffset = '2px';
-                                    }}
-                                    onBlur={(e) => {
-                                        e.currentTarget.style.outline = 'none';
-                                    }}
-                                    aria-pressed={status === opt}
-                                    role="radio"
-                                    aria-checked={status === opt}
-                                >
-                                    {opt}
-                                </button>
-                            ))}
+                            {STATUS_OPTIONS.map(opt => {
+                                const isSelected = status === opt;
+                                let bg = 'var(--bg-tertiary)';
+                                let border = 'var(--border-subtle)';
+
+                                if (isSelected) {
+                                    if (opt === 'Not Started') {
+                                        bg = '#ef4444';
+                                        border = '#ef4444';
+                                    } else if (opt === 'In Progress') {
+                                        bg = '#f59e0b';
+                                        border = '#f59e0b';
+                                    } else if (opt === 'Done') {
+                                        bg = '#10b981';
+                                        border = '#10b981';
+                                    }
+                                }
+
+                                return (
+                                    <button
+                                        key={opt}
+                                        onClick={() => setStatus(opt)}
+                                        aria-pressed={isSelected}
+                                        role="radio"
+                                        aria-checked={isSelected}
+                                        style={{
+                                            flex: 1,
+                                            padding: '10px 12px',
+                                            background: bg,
+                                            border: `1px solid ${border}`,
+                                            color: isSelected ? 'white' : 'var(--text-primary)',
+                                            borderRadius: '6px',
+                                            cursor: 'pointer',
+                                            fontSize: '0.9rem',
+                                            fontWeight: isSelected ? '600' : '400',
+                                            outline: 'none',
+                                            transition: 'all 0.2s ease',
+                                            whiteSpace: 'nowrap',
+                                            boxShadow: isSelected ? '0 4px 12px rgba(0,0,0,0.2)' : 'none',
+                                            transform: isSelected ? 'scale(1.02)' : 'scale(1)',
+                                        }}
+                                    >
+                                        {opt}
+                                    </button>
+                                );
+                            })}
                         </div>
                     </div>
 
