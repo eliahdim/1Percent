@@ -73,22 +73,24 @@ const GoalNode = ({ id, data, isConnectable, selected }) => {
             />
 
             {/* Status Badge */}
-            <div style={{
-                position: 'absolute',
-                top: '-10px',
-                right: '10px',
-                fontSize: '0.65rem',
-                background: 'rgba(0,0,0,0.6)',
-                backdropFilter: 'blur(4px)',
-                padding: '2px 8px',
-                borderRadius: '10px',
-                fontWeight: 'bold',
-                color: 'white',
-                border: '1px solid rgba(255,255,255,0.2)',
-                boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
-            }}>
-                {data.status || 'Not Started'}
-            </div>
+            {settings.showStatusLabels && (
+                <div style={{
+                    position: 'absolute',
+                    top: '-10px',
+                    right: '10px',
+                    fontSize: '0.65rem',
+                    background: 'rgba(0,0,0,0.6)',
+                    backdropFilter: 'blur(4px)',
+                    padding: '2px 8px',
+                    borderRadius: '10px',
+                    fontWeight: 'bold',
+                    color: 'white',
+                    border: '1px solid rgba(255,255,255,0.2)',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                }}>
+                    {data.status || 'Not Started'}
+                </div>
+            )}
 
             {/* Title Section */}
             <div style={{
