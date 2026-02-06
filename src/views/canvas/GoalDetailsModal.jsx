@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { X, Calendar, Clock, Tag, ChevronDown } from 'lucide-react';
+import { X, Calendar, Clock } from 'lucide-react';
 
 const STATUS_OPTIONS = ['Not Started', 'In Progress', 'Done'];
+
 const GoalDetailsModal = ({ goal, onClose, onUpdate }) => {
     const [title, setTitle] = useState(goal?.data?.label || '');
     const [description, setDescription] = useState(goal?.data?.description || '');
@@ -105,28 +106,61 @@ const GoalDetailsModal = ({ goal, onClose, onUpdate }) => {
                     {/* Status Row */}
                     <div style={{ marginBottom: '20px' }}>
                         <label style={{ display: 'block', fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: '8px' }}>Status</label>
-                        <div style={{ position: 'relative' }}>
-                            <select
-                                value={status}
-                                onChange={(e) => setStatus(e.target.value)}
-                                style={{
-                                    width: '100%',
-                                    background: 'var(--bg-tertiary)',
-                                    border: '1px solid var(--border-subtle)',
-                                    color: 'var(--text-primary)',
-                                    borderRadius: '6px',
-                                    padding: '10px 12px',
-                                    fontSize: '0.9rem',
-                                    appearance: 'none',
-                                    outline: 'none',
-                                    cursor: 'pointer'
-                                }}
-                            >
-                                {STATUS_OPTIONS.map(opt => (
-                                    <option key={opt} value={opt}>{opt}</option>
-                                ))}
-                            </select>
-                            <ChevronDown size={16} style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'var(--text-muted)' }} />
+                        <div
+                            role="radiogroup"
+                            aria-label="Status selection"
+                            style={{
+                                display: 'flex',
+                                gap: '8px',
+                                width: '100%'
+                            }}
+                        >
+                            {STATUS_OPTIONS.map(opt => {
+                                const isSelected = status === opt;
+                                let bg = 'var(--bg-tertiary)';
+                                let border = 'var(--border-subtle)';
+
+                                if (isSelected) {
+                                    if (opt === 'Not Started') {
+                                        bg = '#ef4444';
+                                        border = '#ef4444';
+                                    } else if (opt === 'In Progress') {
+                                        bg = '#f59e0b';
+                                        border = '#f59e0b';
+                                    } else if (opt === 'Done') {
+                                        bg = '#10b981';
+                                        border = '#10b981';
+                                    }
+                                }
+
+                                return (
+                                    <button
+                                        key={opt}
+                                        onClick={() => setStatus(opt)}
+                                        aria-pressed={isSelected}
+                                        role="radio"
+                                        aria-checked={isSelected}
+                                        style={{
+                                            flex: 1,
+                                            padding: '10px 12px',
+                                            background: bg,
+                                            border: `1px solid ${border}`,
+                                            color: isSelected ? 'white' : 'var(--text-primary)',
+                                            borderRadius: '6px',
+                                            cursor: 'pointer',
+                                            fontSize: '0.9rem',
+                                            fontWeight: isSelected ? '600' : '400',
+                                            outline: 'none',
+                                            transition: 'all 0.2s ease',
+                                            whiteSpace: 'nowrap',
+                                            boxShadow: isSelected ? '0 4px 12px rgba(0,0,0,0.2)' : 'none',
+                                            transform: isSelected ? 'scale(1.02)' : 'scale(1)',
+                                        }}
+                                    >
+                                        {opt}
+                                    </button>
+                                );
+                            })}
                         </div>
                     </div>
 
