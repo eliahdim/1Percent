@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import Sidebar from './views/layout/Sidebar'
 import GoalCanvas from './views/canvas/GoalCanvas'
 import { GoalProvider } from './context/GoalContext'
@@ -8,14 +8,14 @@ import SettingsModal from './views/SettingsModal'
 function App() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [selectedNode, setSelectedNode] = useState(null)
-  const [autoLayoutFn, setAutoLayoutFn] = useState(null)
+  const autoLayoutFnRef = useRef(null)
 
   const handleSelectedNodeChange = (node) => {
     setSelectedNode(node)
   }
 
   const handleAutoLayoutReady = (layoutFn) => {
-    setAutoLayoutFn(() => layoutFn)
+    autoLayoutFnRef.current = layoutFn
   }
 
   return (
@@ -24,7 +24,7 @@ function App() {
         <Sidebar 
           onOpenSettings={() => setIsSettingsOpen(true)} 
           selectedNode={selectedNode}
-          onAutoLayout={autoLayoutFn}
+          onAutoLayout={() => autoLayoutFnRef.current && autoLayoutFnRef.current()}
         />
         <GoalCanvas 
           onSelectedNodeChange={handleSelectedNodeChange}

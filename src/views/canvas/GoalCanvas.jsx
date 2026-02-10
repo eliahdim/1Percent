@@ -96,6 +96,12 @@ const GoalCanvasInner = ({ onSelectedNodeChange, onAutoLayoutReady }) => {
     }, [deleteGoal]);
 
     const selectedNode = nodes.find(n => n.selected);
+    const onLayoutRef = useRef(onLayout);
+    
+    // Update ref when onLayout changes
+    useEffect(() => {
+        onLayoutRef.current = onLayout;
+    }, [onLayout]);
 
     // Notify parent of selected node changes
     useEffect(() => {
@@ -104,12 +110,13 @@ const GoalCanvasInner = ({ onSelectedNodeChange, onAutoLayoutReady }) => {
         }
     }, [selectedNode, onSelectedNodeChange]);
 
-    // Expose auto-layout function to parent
+    // Expose auto-layout function to parent (only once)
     useEffect(() => {
         if (onAutoLayoutReady) {
-            onAutoLayoutReady(onLayout);
+            // Provide a stable wrapper that always calls the latest onLayout
+            onAutoLayoutReady(() => onLayoutRef.current());
         }
-    }, [onLayout, onAutoLayoutReady]);
+    }, [onAutoLayoutReady]);
 
     return (
         <div style={{ flex: 1, height: '100%', position: 'relative' }}>

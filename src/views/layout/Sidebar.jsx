@@ -138,7 +138,7 @@ const Sidebar = ({ onOpenSettings, selectedNode, onAutoLayout }) => {
                     style={{
                         width: '100%',
                         padding: '10px',
-                        background: selectedNode ? 'var(--bg-tertiary)' : 'var(--bg-tertiary)',
+                        background: 'var(--bg-tertiary)',
                         color: selectedNode ? 'var(--text-primary)' : 'var(--text-muted)',
                         border: '1px solid var(--border-subtle)',
                         borderRadius: '6px',
