@@ -77,17 +77,27 @@ const GoalCanvasInner = ({ onSelectedNodeChange, onAutoLayoutReady }) => {
         if (draggedNode) {
             // Identify all nodes that moved (dragged node + descendants)
             const descendants = getDescendants(nodes, edges, draggedNode.id);
-            const nodesToUpdate = [draggedNode.id, ...Array.from(descendants)];
+            const nodesToUpdateIds = [draggedNode.id, ...Array.from(descendants)];
 
-            nodesToUpdate.forEach(nodeId => {
+            // Prepare batch update
+            const updates = [];
+
+            nodesToUpdateIds.forEach(nodeId => {
                 const currentNode = nodes.find(n => n.id === nodeId);
                 if (currentNode) {
-                    updateGoal(currentNode.id, {
-                        x: Math.round(currentNode.position.x),
-                        y: Math.round(currentNode.position.y)
+                    updates.push({
+                        id: currentNode.id,
+                        updates: {
+                            x: Math.round(currentNode.position.x),
+                            y: Math.round(currentNode.position.y)
+                        }
                     });
                 }
             });
+
+            if (updates.length > 0) {
+                updateGoals(updates);
+            }
         }
 
         draggingNodeRef.current = null;
