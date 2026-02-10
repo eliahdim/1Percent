@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useState, useEffect } from 'react';
+import React, { useCallback, useRef, useState, useEffect, useMemo } from 'react';
 import {
     ReactFlow,
     MiniMap,
@@ -95,7 +95,7 @@ const GoalCanvasInner = ({ onSelectedNodeChange, onAutoLayoutReady }) => {
         }
     }, [deleteGoal]);
 
-    const selectedNode = nodes.find(n => n.selected);
+    const selectedNode = useMemo(() => nodes.find(n => n.selected), [nodes]);
     const onLayoutRef = useRef(onLayout);
     
     // Update ref when onLayout changes
