@@ -15,7 +15,8 @@ export const SettingsProvider = ({ children }) => {
         const saved = localStorage.getItem('onepercent_settings');
         return saved ? JSON.parse(saved) : {
             showDescriptions: true,
-            maxDescriptionLength: 50
+            maxDescriptionLength: 50,
+            showStatusLabels: true
         };
     });
 
