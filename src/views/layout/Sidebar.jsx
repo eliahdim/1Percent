@@ -1,12 +1,34 @@
 import React from 'react';
-import { Plus, Settings, Target, ChevronDown, Trophy } from 'lucide-react';
+import { Plus, Settings, Target, Trophy, GitFork, Trash2, Layout } from 'lucide-react';
 import { useGoalContext } from '../../context/GoalContext';
 
-const Sidebar = ({ onOpenSettings }) => {
-    const { nodes, addGoal } = useGoalContext();
+const Sidebar = ({ onOpenSettings, selectedNode, onAutoLayout }) => {
+    const { nodes, addGoal, addSubgoal, deleteGoal } = useGoalContext();
 
     // Only show root goals (isRoot is added in transformData)
     const goalNodes = nodes.filter(n => n.type === 'goal' && n.data.isRoot);
+
+    const onAddSubgoalClick = () => {
+        if (selectedNode) {
+            addSubgoal(selectedNode.id);
+        } else {
+            alert("Please select exactly one goal to add a subgoal to.");
+        }
+    };
+
+    const onDeleteClick = () => {
+        if (selectedNode) {
+            if (window.confirm(`Are you sure you want to delete "${selectedNode.data.label}"?`)) {
+                deleteGoal(selectedNode.id);
+            }
+        }
+    };
+
+    const onAutoLayoutClick = () => {
+        if (onAutoLayout) {
+            onAutoLayout();
+        }
+    };
 
     return (
         <aside style={{
@@ -87,7 +109,7 @@ const Sidebar = ({ onOpenSettings }) => {
             </div>
 
             {/* Footer / Controls */}
-            <div style={{ padding: '15px', borderTop: '1px solid var(--border-subtle)' }}>
+            <div style={{ padding: '15px', borderTop: '1px solid var(--border-subtle)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 <button
                     onClick={() => addGoal('New Goal')}
                     style={{
@@ -108,6 +130,80 @@ const Sidebar = ({ onOpenSettings }) => {
                     <Plus size={18} />
                     New Goal
                 </button>
+                
+                <button
+                    onClick={onAddSubgoalClick}
+                    disabled={!selectedNode}
+                    title={selectedNode ? `Add subgoal to "${selectedNode.data.label}"` : "Select a goal to add a subgoal"}
+                    style={{
+                        width: '100%',
+                        padding: '10px',
+                        background: selectedNode ? 'var(--bg-tertiary)' : 'var(--bg-tertiary)',
+                        color: selectedNode ? 'var(--text-primary)' : 'var(--text-muted)',
+                        border: '1px solid var(--border-subtle)',
+                        borderRadius: '6px',
+                        cursor: selectedNode ? 'pointer' : 'not-allowed',
+                        fontWeight: '500',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '8px',
+                        opacity: selectedNode ? 1 : 0.6,
+                        transition: 'all 0.2s'
+                    }}
+                >
+                    <GitFork size={16} />
+                    {selectedNode
+                        ? `Add to ${selectedNode.data.label.length > 15 ? selectedNode.data.label.substring(0, 12) + '...' : selectedNode.data.label}`
+                        : "Add Subgoal"
+                    }
+                </button>
+
+                <button
+                    onClick={onAutoLayoutClick}
+                    style={{
+                        width: '100%',
+                        padding: '10px',
+                        background: 'var(--bg-tertiary)',
+                        color: 'var(--text-primary)',
+                        border: '1px solid var(--border-subtle)',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        fontWeight: '500',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '8px'
+                    }}
+                >
+                    <Layout size={16} />
+                    Auto Layout
+                </button>
+
+                {selectedNode && (
+                    <button
+                        onClick={onDeleteClick}
+                        title={`Delete "${selectedNode.data.label}"`}
+                        style={{
+                            width: '100%',
+                            padding: '10px',
+                            background: '#3b1212',
+                            color: '#ef4444',
+                            border: '1px solid #ef4444',
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                            fontWeight: '500',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '8px',
+                            transition: 'all 0.2s'
+                        }}
+                    >
+                        <Trash2 size={16} />
+                        Delete
+                    </button>
+                )}
             </div>
         </aside>
     );
