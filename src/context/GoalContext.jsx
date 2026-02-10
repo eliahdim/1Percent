@@ -124,9 +124,18 @@ export const GoalProvider = ({ children }) => {
     }, [refreshGoals]);
 
     // Custom Drag Logic: Move subtree (Placeholder for now, implementation depends on if we want to save position to DB)
-    const onNodeDrag = useCallback((event, node, nodes) => {
-        // TODO: potential updates
-    }, []);
+    //const onNodeDrag = useCallback((event, node, nodes) => {
+    //    // TODO: potential updates
+    //}, []);
+
+    const deleteGoal = useCallback(async (id) => {
+        try {
+            await api.deleteGoal(id);
+            await refreshGoals();
+        } catch (error) {
+            console.error("Failed to delete goal:", error);
+        }
+    }, [refreshGoals]);
 
     const value = {
         nodes,
@@ -138,6 +147,7 @@ export const GoalProvider = ({ children }) => {
         addGoal,
         addSubgoal,
         updateGoal,
+        deleteGoal,
         loading,
         refreshGoals
     };

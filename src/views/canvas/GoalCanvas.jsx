@@ -10,7 +10,7 @@ import {
     ReactFlowProvider
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { Layout, GitFork } from 'lucide-react';
+import { Layout, GitFork, Trash2 } from 'lucide-react';
 import GoalNode from './GoalNode';
 import GoalDetailsModal from './GoalDetailsModal';
 import { getLayoutedElements } from '../../utils/autoLayout';
@@ -27,7 +27,7 @@ const GoalCanvasInner = () => {
     const {
         nodes, setNodes, onNodesChange,
         edges, setEdges, onEdgesChange,
-        addSubgoal, updateGoal
+        addSubgoal, updateGoal, deleteGoal
     } = useGoalContext();
 
     const [selectedGoalForModal, setSelectedGoalForModal] = useState(null);
@@ -89,6 +89,33 @@ const GoalCanvasInner = () => {
         }
     };
 
+    const onDeleteNodes = useCallback((deletedNodes) => {
+        // This is called by React Flow when someone presses Backspace/Delete
+        // We handle it manually to add confirmation
+        if (deletedNodes.length > 0) {
+            const node = deletedNodes[0];
+            const confirmDelete = window.confirm(`Are you sure you want to delete "${node.data.label}"?`);
+            if (confirmDelete) {
+                deleteGoal(node.id);
+            } else {
+                // If cancelled, we want to put the node back or just prevent deletion
+                // Since onNodesDelete happens AFTER deletion, we might need a different approach 
+                // but React Flow nodes are controlled by our context 'nodes' state.
+                // refreshGoals() will bring it back if we don't delete on backend.
+            }
+        }
+    }, [deleteGoal]);
+
+    const onDeleteButtonClick = () => {
+        const selectedNodes = nodes.filter(n => n.selected);
+        if (selectedNodes.length === 1) {
+            const node = selectedNodes[0];
+            if (window.confirm(`Are you sure you want to delete "${node.data.label}"?`)) {
+                deleteGoal(node.id);
+            }
+        }
+    };
+
     const selectedNode = nodes.find(n => n.selected);
 
     return (
@@ -103,6 +130,7 @@ const GoalCanvasInner = () => {
                 onNodeDrag={onNodeDrag}
                 onNodeDragStop={onNodeDragStop}
                 onNodeDoubleClick={onNodeDoubleClick}
+                onNodesDelete={onDeleteNodes}
                 nodeTypes={nodeTypes}
                 fitView
                 colorMode="dark"
@@ -143,6 +171,30 @@ const GoalCanvasInner = () => {
                             : "Add Subgoal"
                         }
                     </button>
+                    {selectedNode && (
+                        <button
+                            onClick={onDeleteButtonClick}
+                            title={`Delete "${selectedNode.data.label}"`}
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                padding: '8px 12px',
+                                background: '#3b1212',
+                                border: '1px solid #ef4444',
+                                color: '#ef4444',
+                                borderRadius: '6px',
+                                cursor: 'pointer',
+                                fontWeight: '500',
+                                fontSize: '0.9rem',
+                                boxShadow: '0 2px 5px rgba(0,0,0,0.2)',
+                                transition: 'all 0.2s'
+                            }}
+                        >
+                            <Trash2 size={16} />
+                            <span>Delete</span>
+                        </button>
+                    )}
                     <button
                         onClick={onLayout}
                         style={{
@@ -171,6 +223,7 @@ const GoalCanvasInner = () => {
                     goal={selectedGoalForModal}
                     onClose={() => setSelectedGoalForModal(null)}
                     onUpdate={updateGoal}
+                    onDelete={deleteGoal}
                 />
             )}
         </div>

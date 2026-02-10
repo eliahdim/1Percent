@@ -3,7 +3,7 @@ import { X, Calendar, Clock } from 'lucide-react';
 
 const STATUS_OPTIONS = ['Not Started', 'In Progress', 'Done'];
 
-const GoalDetailsModal = ({ goal, onClose, onUpdate }) => {
+const GoalDetailsModal = ({ goal, onClose, onUpdate, onDelete }) => {
     const [title, setTitle] = useState(goal?.data?.label || '');
     const [description, setDescription] = useState(goal?.data?.description || '');
     const [status, setStatus] = useState(goal?.data?.status || 'Not Started');
@@ -25,6 +25,13 @@ const GoalDetailsModal = ({ goal, onClose, onUpdate }) => {
             status
         });
         onClose();
+    };
+
+    const handleDelete = () => {
+        if (window.confirm(`Are you sure you want to delete "${goal.data.label}"?`)) {
+            onDelete(goal.id);
+            onClose();
+        }
     };
 
     const formatDate = (dateString) => {
@@ -213,6 +220,21 @@ const GoalDetailsModal = ({ goal, onClose, onUpdate }) => {
                     justifyContent: 'flex-end',
                     gap: '12px'
                 }}>
+                    <button
+                        onClick={handleDelete}
+                        style={{
+                            padding: '10px 20px',
+                            background: 'transparent',
+                            border: '1px solid #ef4444',
+                            color: '#ef4444',
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                            fontSize: '0.9rem',
+                            marginRight: 'auto'
+                        }}
+                    >
+                        Delete Goal
+                    </button>
                     <button
                         onClick={onClose}
                         style={{
