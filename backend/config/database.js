@@ -29,9 +29,27 @@ const initializeDatabase = () => {
       color TEXT DEFAULT '#var(--bg-secondary)',
       created_at TEXT DEFAULT (datetime('now')),
       updated_at TEXT DEFAULT (datetime('now')),
+      x INTEGER DEFAULT 0,
+      y INTEGER DEFAULT 0,
       FOREIGN KEY (parent_id) REFERENCES goals(id) ON DELETE CASCADE
     )
   `);
+
+  // Check if x and y columns exist (for existing databases)
+  try {
+    const columns = db.pragma('table_info(goals)');
+    const hasX = columns.some(col => col.name === 'x');
+    const hasY = columns.some(col => col.name === 'y');
+
+    if (!hasX) {
+      db.exec('ALTER TABLE goals ADD COLUMN x INTEGER DEFAULT 0');
+    }
+    if (!hasY) {
+      db.exec('ALTER TABLE goals ADD COLUMN y INTEGER DEFAULT 0');
+    }
+  } catch (error) {
+    console.error('Error migrating database:', error);
+  }
 
   // Create index for faster parent lookups
   db.exec(`

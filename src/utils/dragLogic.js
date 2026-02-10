@@ -6,31 +6,32 @@
  * @param {Object} delta - {x, y} change in position
  * @returns {Array} newNodes - updated list of nodes
  */
-export const moveSubtree = (nodes, edges, draggedNode, delta) => {
-    // Find all children of the dragged node
-    const getChildren = (parentId) => {
-        return edges
-            .filter(edge => edge.source === parentId)
-            .map(edge => edge.target);
-    };
+export const getDescendants = (nodes, edges, parentId) => {
+    const visited = new Set();
+    const stack = [parentId];
 
-    // Recursive function to get all descendants
-    const getDescendants = (parentId, visited = new Set()) => {
-        const children = getChildren(parentId);
+    while (stack.length > 0) {
+        const currentId = stack.pop();
+        // Find children
+        const children = edges
+            .filter(edge => edge.source === currentId)
+            .map(edge => edge.target);
+
         children.forEach(childId => {
             if (!visited.has(childId)) {
                 visited.add(childId);
-                getDescendants(childId, visited);
+                stack.push(childId);
             }
         });
-        return visited;
-    };
+    }
+    return visited;
+};
 
-    const descendants = getDescendants(draggedNode.id);
+export const moveSubtree = (nodes, edges, draggedNode, delta) => {
+    const descendants = getDescendants(nodes, edges, draggedNode.id);
 
     return nodes.map((node) => {
-        // If it's a descendant, apply the delta
-        if (descendants.has(node.id)) {
+        if (node.id === draggedNode.id || descendants.has(node.id)) {
             return {
                 ...node,
                 position: {

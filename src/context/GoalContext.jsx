@@ -16,7 +16,7 @@ const transformData = (goals) => {
         nodes.push({
             id: goal.id.toString(),
             type: 'goal',
-            position: { x, y: y }, // We might want to use autoLayout later, so initial pos can be somewhat arbitrary or calculated
+            position: (goal.x !== 0 || goal.y !== 0) ? { x: goal.x, y: goal.y } : { x, y: y }, // Use persisted position if available
             data: {
                 label: goal.title,
                 description: goal.description,
@@ -123,6 +123,15 @@ export const GoalProvider = ({ children }) => {
         }
     }, [refreshGoals]);
 
+    const updateGoals = useCallback(async (updatesArray) => {
+        try {
+            await Promise.all(updatesArray.map(({ id, updates }) => api.updateGoal(id, updates)));
+            await refreshGoals();
+        } catch (error) {
+            console.error("Failed to batch update goals:", error);
+        }
+    }, [refreshGoals]);
+
     // Custom Drag Logic: Move subtree (Placeholder for now, implementation depends on if we want to save position to DB)
     //const onNodeDrag = useCallback((event, node, nodes) => {
     //    // TODO: potential updates
@@ -147,6 +156,7 @@ export const GoalProvider = ({ children }) => {
         addGoal,
         addSubgoal,
         updateGoal,
+        updateGoals,
         deleteGoal,
         loading,
         refreshGoals

@@ -13,7 +13,7 @@ import GoalNode from './GoalNode';
 import GoalDetailsModal from './GoalDetailsModal';
 import { getLayoutedElements } from '../../utils/autoLayout';
 import { useGoalContext } from '../../context/GoalContext';
-import { moveSubtree } from '../../utils/dragLogic';
+import { moveSubtree, getDescendants } from '../../utils/dragLogic';
 
 const nodeTypes = {
     goal: GoalNode,
@@ -25,7 +25,7 @@ const GoalCanvasInner = ({ onSelectedNodeChange, onAutoLayoutReady }) => {
     const {
         nodes, setNodes, onNodesChange,
         edges, setEdges, onEdgesChange,
-        updateGoal, deleteGoal
+        updateGoal, updateGoals, deleteGoal
     } = useGoalContext();
 
     const [selectedGoalForModal, setSelectedGoalForModal] = useState(null);
@@ -72,7 +72,24 @@ const GoalCanvasInner = ({ onSelectedNodeChange, onAutoLayoutReady }) => {
         setNodes((nds) => moveSubtree(nds, edges, node, delta));
     };
 
-    const onNodeDragStop = () => {
+    const onNodeDragStop = (event, node) => {
+        const draggedNode = draggingNodeRef.current;
+        if (draggedNode) {
+            // Identify all nodes that moved (dragged node + descendants)
+            const descendants = getDescendants(nodes, edges, draggedNode.id);
+            const nodesToUpdate = [draggedNode.id, ...Array.from(descendants)];
+
+            nodesToUpdate.forEach(nodeId => {
+                const currentNode = nodes.find(n => n.id === nodeId);
+                if (currentNode) {
+                    updateGoal(currentNode.id, {
+                        x: Math.round(currentNode.position.x),
+                        y: Math.round(currentNode.position.y)
+                    });
+                }
+            });
+        }
+
         draggingNodeRef.current = null;
         lastPosRef.current = null;
     };
@@ -97,7 +114,7 @@ const GoalCanvasInner = ({ onSelectedNodeChange, onAutoLayoutReady }) => {
 
     const selectedNode = useMemo(() => nodes.find(n => n.selected), [nodes]);
     const onLayoutRef = useRef(onLayout);
-    
+
     // Update ref when onLayout changes
     useEffect(() => {
         onLayoutRef.current = onLayout;
@@ -161,7 +178,7 @@ const GoalCanvasInner = ({ onSelectedNodeChange, onAutoLayoutReady }) => {
 export default function GoalCanvas({ onSelectedNodeChange, onAutoLayoutReady }) {
     return (
         <ReactFlowProvider>
-            <GoalCanvasInner 
+            <GoalCanvasInner
                 onSelectedNodeChange={onSelectedNodeChange}
                 onAutoLayoutReady={onAutoLayoutReady}
             />
