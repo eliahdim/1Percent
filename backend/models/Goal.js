@@ -110,7 +110,33 @@ const Goal = {
     if (!goal) return null;
 
     const subgoals = Goal.findByParentId(goalId);
-    goal.subgoals = subgoals.map((subgoal) => Goal.getTree(subgoal.id));
+    const processedSubgoals = subgoals.map((subgoal) => {
+      // Recursively get the tree for each subgoal to calculate its own progress
+      return Goal.getTree(subgoal.id);
+    });
+
+    // Calculate Progress
+    let progress = 0;
+    if (processedSubgoals.length > 0) {
+      // Parent progress is the average of its children's progress
+      const totalProgress = processedSubgoals.reduce((acc, curr) => acc + (curr.progress || 0), 0);
+      progress = Math.round(totalProgress / processedSubgoals.length);
+    } else {
+      // Leaf node progress based on status
+      switch (goal.status) {
+        case 'Done':
+          progress = 100;
+          break;
+        case 'In Progress':
+          progress = 50;
+          break;
+        default:
+          progress = 0;
+      }
+    }
+
+    goal.subgoals = processedSubgoals;
+    goal.progress = progress;
     return goal;
   },
 

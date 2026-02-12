@@ -11,6 +11,11 @@ const Sidebar = ({ onOpenSettings, selectedNode, onAutoLayout }) => {
     // Only show root goals (isRoot is added in transformData)
     const goalNodes = nodes.filter(n => n.type === 'goal' && n.data.isRoot);
 
+    // Calculate Global Progress (Average of all root goals)
+    const globalProgress = goalNodes.length > 0
+        ? Math.round(goalNodes.reduce((acc, curr) => acc + (curr.data.progress || 0), 0) / goalNodes.length)
+        : 0;
+
     const onAddGoalClick = () => {
         const { x, y, zoom } = getViewport();
         // Calculate center of the viewport
@@ -82,20 +87,23 @@ const Sidebar = ({ onOpenSettings, selectedNode, onAutoLayout }) => {
                 </button>
             </div>
 
-            {/* Goal List */}
-            <div style={{ flex: 1, overflowY: 'auto', padding: '10px' }}>
-                <div style={{ marginBottom: '10px' }}>
-                    <p style={{
-                        fontSize: '0.75rem',
-                        color: 'var(--text-muted)',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.05em',
-                        marginBottom: '10px',
-                        paddingLeft: '10px'
-                    }}>
+            {/* Goals List */}
+            <div style={{ flex: 1, overflowY: 'auto', padding: '20px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+                    <h3 style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--text-muted)', margin: 0 }}>
                         Your Goals
-                    </p>
+                    </h3>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                        <span style={{ fontSize: '0.9rem', fontWeight: 'bold', color: 'var(--accent-success)' }}>
+                            {globalProgress}%
+                        </span>
+                        <div style={{ width: '60px', height: '4px', background: 'var(--bg-tertiary)', borderRadius: '2px', marginTop: '4px', overflow: 'hidden' }}>
+                            <div style={{ width: `${globalProgress}%`, height: '100%', background: 'var(--accent-success)', transition: 'width 0.5s ease' }} />
+                        </div>
+                    </div>
+                </div>
 
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     {goalNodes.map((node) => (
                         <div
                             key={node.id}
@@ -117,10 +125,16 @@ const Sidebar = ({ onOpenSettings, selectedNode, onAutoLayout }) => {
                                 whiteSpace: 'nowrap',
                                 overflow: 'hidden',
                                 textOverflow: 'ellipsis',
-                                fontSize: '0.9rem'
+                                fontSize: '0.9rem',
+                                flex: 1
                             }}>
                                 {node.data.label}
                             </span>
+                            {node.data.progress !== undefined && (
+                                <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: 'var(--accent-success)' }}>
+                                    {Math.round(node.data.progress)}%
+                                </span>
+                            )}
                         </div>
                     ))}
                 </div>

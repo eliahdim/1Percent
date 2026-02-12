@@ -174,6 +174,39 @@ const GoalNode = ({ id, data, isConnectable, selected }) => {
                 </div>
             )}
 
+            {/* Progress Bar */}
+            <div style={{
+                marginTop: '10px',
+                width: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center'
+            }}>
+                <div style={{
+                    width: '100%',
+                    height: '6px',
+                    backgroundColor: 'rgba(0,0,0,0.3)',
+                    borderRadius: '3px',
+                    overflow: 'hidden',
+                    position: 'relative'
+                }}>
+                    <div style={{
+                        width: `${data.progress || 0}%`,
+                        height: '100%',
+                        backgroundColor: 'white',
+                        transition: 'width 0.5s ease-in-out'
+                    }} />
+                </div>
+                <div style={{
+                    fontSize: '0.7rem',
+                    marginTop: '2px',
+                    opacity: 0.8,
+                    fontWeight: 'bold'
+                }}>
+                    {Math.round(data.progress || 0)}%
+                </div>
+            </div>
+
             <Handle
                 type="source"
                 position={Position.Bottom}

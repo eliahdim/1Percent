@@ -110,6 +110,17 @@ const GoalDetailsModal = ({ goal, onClose, onUpdate, onDelete }) => {
                         />
                     </div>
 
+                    {/* Progress Display */}
+                    <div style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px', background: 'rgba(0,0,0,0.1)', borderRadius: '8px' }}>
+                        <div>
+                            <span style={{ fontSize: '0.875rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Progress</span>
+                            <span style={{ fontSize: '1.25rem', fontWeight: 'bold', color: 'var(--accent-success)' }}>{Math.round(goal.data.progress || 0)}%</span>
+                        </div>
+                        <div style={{ width: '120px', height: '8px', background: 'var(--bg-tertiary)', borderRadius: '4px', overflow: 'hidden' }}>
+                            <div style={{ width: `${goal.data.progress || 0}%`, height: '100%', background: 'var(--accent-success)', transition: 'width 0.3s ease' }} />
+                        </div>
+                    </div>
+
                     {/* Status Row */}
                     <div style={{ marginBottom: '20px' }}>
                         <label style={{ display: 'block', fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: '8px' }}>Status</label>
