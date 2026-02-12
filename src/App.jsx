@@ -26,7 +26,7 @@ function App() {
           <Sidebar
             onOpenSettings={() => setIsSettingsOpen(true)}
             selectedNode={selectedNode}
-            onAutoLayout={() => autoLayoutFnRef.current && autoLayoutFnRef.current()}
+            onAutoLayout={(...args) => autoLayoutFnRef.current && autoLayoutFnRef.current(...args)}
           />
           <GoalCanvas
             onSelectedNodeChange={handleSelectedNodeChange}

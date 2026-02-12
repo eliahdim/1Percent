@@ -184,7 +184,7 @@ const GoalCanvasInner = ({ onSelectedNodeChange, onAutoLayoutReady }) => {
     useEffect(() => {
         if (onAutoLayoutReady) {
             // Provide a stable wrapper that always calls the latest onLayout
-            onAutoLayoutReady(() => onLayoutRef.current());
+            onAutoLayoutReady((...args) => onLayoutRef.current(...args));
         }
     }, [onAutoLayoutReady]);
 
