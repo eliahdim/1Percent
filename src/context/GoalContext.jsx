@@ -92,9 +92,14 @@ export const GoalProvider = ({ children }) => {
         refreshGoals();
     }, [refreshGoals]);
 
-    const addGoal = useCallback(async (label) => {
+    const addGoal = useCallback(async (label, x, y) => {
         try {
-            await api.createGoal({ title: label, description: 'New Goal' });
+            await api.createGoal({
+                title: label,
+                description: 'New Goal',
+                x: x || 0,
+                y: y || 0
+            });
             await refreshGoals();
         } catch (error) {
             console.error("Failed to create goal:", error);
@@ -103,16 +108,23 @@ export const GoalProvider = ({ children }) => {
 
     const addSubgoal = useCallback(async (parentId) => {
         try {
+            // Find parent to get its position
+            const parentNode = nodes.find(n => n.id === parentId);
+            const parentX = parentNode?.position?.x || 0;
+            const parentY = parentNode?.position?.y || 0;
+
             await api.createGoal({
                 title: 'New Subgoal',
                 description: 'Actionable step',
-                parentId: parentId
+                parentId: parentId,
+                x: parentX,
+                y: parentY + 200 // Spawn below parent
             });
             await refreshGoals();
         } catch (error) {
             console.error("Failed to create subgoal:", error);
         }
-    }, [refreshGoals]);
+    }, [refreshGoals, nodes]);
 
     const updateGoal = useCallback(async (id, updates) => {
         try {

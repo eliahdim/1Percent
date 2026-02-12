@@ -5,8 +5,7 @@ import {
     Controls,
     Background,
     addEdge,
-    useReactFlow,
-    ReactFlowProvider
+    useReactFlow
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import GoalNode from './GoalNode';
@@ -43,18 +42,62 @@ const GoalCanvasInner = ({ onSelectedNodeChange, onAutoLayoutReady }) => {
         [setEdges],
     );
 
-    const onLayout = useCallback(() => {
-        const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(
-            nodes,
-            edges,
-            'TB' // Top to Bottom
+    const onLayout = useCallback((rootId = null) => {
+        let nodesToLayout = nodes;
+        let edgesToLayout = edges;
+
+        if (rootId) {
+            const descendants = getDescendants(nodes, edges, rootId);
+            const subtreeIds = new Set([rootId, ...descendants]);
+            nodesToLayout = nodes.filter(n => subtreeIds.has(n.id));
+
+            // Filter edges that connect nodes within the subtree
+            edgesToLayout = edges.filter(e => subtreeIds.has(e.source) && subtreeIds.has(e.target));
+        }
+
+        const { nodes: layoutedNodes } = getLayoutedElements(
+            nodesToLayout,
+            edgesToLayout,
+            'TB'
         );
 
-        setNodes([...layoutedNodes]);
-        setEdges([...layoutedEdges]);
+        // Map layouted nodes back to full node list or update their positions
+        // If we are doing partial layout, we only want to update the positions of the involved nodes
+        // AND we want to persist them.
 
-        window.requestAnimationFrame(() => fitView({ duration: 400 }));
-    }, [nodes, edges, setNodes, setEdges, fitView]);
+        // 1. Update State
+        if (rootId) {
+            const layoutedNodeMap = new Map(layoutedNodes.map(n => [n.id, n]));
+
+            const newNodes = nodes.map(n => {
+                if (layoutedNodeMap.has(n.id)) {
+                    return layoutedNodeMap.get(n.id);
+                }
+                return n;
+            });
+            setNodes(newNodes);
+            // Edges don't change in layout usually, but if dagre changes them (e.g. points), we might need to update. 
+            // Our getLayoutedElements doesn't change edges, so we can skip setEdges for partial.
+        } else {
+            setNodes([...layoutedNodes]);
+            setEdges([...edgesToLayout]); // edgesToLayout is all edges in full mode
+            window.requestAnimationFrame(() => fitView({ duration: 400 }));
+        }
+
+        // 2. Persist Changes
+        const updates = layoutedNodes.map(n => ({
+            id: n.id,
+            updates: {
+                x: Math.round(n.position.x),
+                y: Math.round(n.position.y)
+            }
+        }));
+
+        if (updates.length > 0) {
+            updateGoals(updates);
+        }
+
+    }, [nodes, edges, setNodes, setEdges, fitView, updateGoals]);
 
     // -- Recursive Drag Logic --
     const onNodeDragStart = (event, node) => {
@@ -185,13 +228,4 @@ const GoalCanvasInner = ({ onSelectedNodeChange, onAutoLayoutReady }) => {
 };
 
 // Main Export: Wraps the Inner component in the Provider
-export default function GoalCanvas({ onSelectedNodeChange, onAutoLayoutReady }) {
-    return (
-        <ReactFlowProvider>
-            <GoalCanvasInner
-                onSelectedNodeChange={onSelectedNodeChange}
-                onAutoLayoutReady={onAutoLayoutReady}
-            />
-        </ReactFlowProvider>
-    );
-}
+export default GoalCanvasInner;

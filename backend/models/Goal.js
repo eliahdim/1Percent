@@ -32,7 +32,7 @@ const Goal = {
   /**
    * Create a new goal
    */
-  create: ({ title, description, parentId, status, color }) => {
+  create: ({ title, description, parentId, status, color, x, y }) => {
     const stmt = db.prepare(`
       INSERT INTO goals (title, description, parent_id, status, color, x, y)
       VALUES (?, ?, ?, ?, ?, ?, ?)
@@ -43,8 +43,8 @@ const Goal = {
       parentId || null,
       status || 'Not Started',
       color || null,
-      0, // Default x
-      0  // Default y
+      x || 0, // Use provided x or default to 0
+      y || 0  // Use provided y or default to 0
     );
     return Goal.findById(result.lastInsertRowid);
   },

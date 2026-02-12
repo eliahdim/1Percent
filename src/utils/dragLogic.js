@@ -27,6 +27,19 @@ export const getDescendants = (nodes, edges, parentId) => {
     return visited;
 };
 
+export const getRoot = (nodes, edges, startNodeId) => {
+    let currentId = startNodeId;
+    let parentEdge = edges.find(e => e.target === currentId);
+
+    // Traverse up until no parent is found
+    while (parentEdge) {
+        currentId = parentEdge.source;
+        parentEdge = edges.find(e => e.target === currentId);
+    }
+
+    return nodes.find(n => n.id === currentId);
+};
+
 export const moveSubtree = (nodes, edges, draggedNode, delta) => {
     const descendants = getDescendants(nodes, edges, draggedNode.id);
 

@@ -66,7 +66,7 @@ const goalController = {
    */
   createGoal: (req, res) => {
     try {
-      const { title, description, parentId } = req.body;
+      const { title, description, parentId, x, y } = req.body;
 
       if (!title || typeof title !== 'string' || title.trim() === '') {
         return res.status(400).json({ error: 'Title is required' });
@@ -83,7 +83,9 @@ const goalController = {
       const goal = Goal.create({
         title: title.trim(),
         description: description?.trim(),
-        parentId: parentId ? Number(parentId) : null
+        parentId: parentId ? Number(parentId) : null,
+        x: x || 0,
+        y: y || 0
       });
 
       res.status(201).json(goal);

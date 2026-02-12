@@ -1,12 +1,26 @@
 import React from 'react';
 import { Plus, Settings, Target, Trophy, GitFork, Trash2, Layout } from 'lucide-react';
 import { useGoalContext } from '../../context/GoalContext';
+import { useReactFlow } from '@xyflow/react';
+import { getRoot } from '../../utils/dragLogic';
 
 const Sidebar = ({ onOpenSettings, selectedNode, onAutoLayout }) => {
-    const { nodes, addGoal, addSubgoal, deleteGoal } = useGoalContext();
+    const { nodes, edges, addGoal, addSubgoal, deleteGoal } = useGoalContext();
+    const { getViewport } = useReactFlow();
 
     // Only show root goals (isRoot is added in transformData)
     const goalNodes = nodes.filter(n => n.type === 'goal' && n.data.isRoot);
+
+    const onAddGoalClick = () => {
+        const { x, y, zoom } = getViewport();
+        // Calculate center of the viewport
+        // We assume generic viewport size (e.g. window center), or we can just use the center of visible area inverted
+        // Center of screen in flow coordinates = -viewportX / zoom + screenWidth/2 / zoom
+        const centerX = -x / zoom + (window.innerWidth - 300) / 2 / zoom; // Subtract sidebar width approx
+        const centerY = -y / zoom + window.innerHeight / 2 / zoom;
+
+        addGoal('New Goal', Math.round(centerX), Math.round(centerY));
+    };
 
     const onAddSubgoalClick = () => {
         if (selectedNode) {
@@ -16,17 +30,21 @@ const Sidebar = ({ onOpenSettings, selectedNode, onAutoLayout }) => {
         }
     };
 
+    // Determine root of selected node for auto-layout
+    const selectedRoot = selectedNode ? getRoot(nodes, (useGoalContext().edges || []), selectedNode.id) : null;
+
+    const onAutoLayoutClick = () => {
+        if (onAutoLayout) {
+            // Pass the root ID if a node is selected, otherwise null (full layout)
+            onAutoLayout(selectedRoot ? selectedRoot.id : null);
+        }
+    };
+
     const onDeleteClick = () => {
         if (selectedNode) {
             if (window.confirm(`Are you sure you want to delete "${selectedNode.data.label}"?`)) {
                 deleteGoal(selectedNode.id);
             }
-        }
-    };
-
-    const onAutoLayoutClick = () => {
-        if (onAutoLayout) {
-            onAutoLayout();
         }
     };
 
@@ -111,51 +129,27 @@ const Sidebar = ({ onOpenSettings, selectedNode, onAutoLayout }) => {
             {/* Footer / Controls */}
             <div style={{ padding: '15px', borderTop: '1px solid var(--border-subtle)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 <button
-                    onClick={() => addGoal('New Goal')}
+                    onClick={() => selectedNode ? onAddSubgoalClick() : onAddGoalClick()}
                     style={{
                         width: '100%',
                         padding: '10px',
-                        background: 'var(--accent-primary)',
-                        color: 'white',
-                        border: 'none',
+                        background: selectedNode ? 'var(--bg-tertiary)' : 'var(--accent-primary)',
+                        color: selectedNode ? 'var(--text-primary)' : 'white',
+                        border: selectedNode ? '1px solid var(--border-subtle)' : 'none',
                         borderRadius: '6px',
                         cursor: 'pointer',
                         fontWeight: '600',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        gap: '8px'
-                    }}
-                >
-                    <Plus size={18} />
-                    New Goal
-                </button>
-                
-                <button
-                    onClick={onAddSubgoalClick}
-                    disabled={!selectedNode}
-                    title={selectedNode ? `Add subgoal to "${selectedNode.data.label}"` : "Select a goal to add a subgoal"}
-                    style={{
-                        width: '100%',
-                        padding: '10px',
-                        background: 'var(--bg-tertiary)',
-                        color: selectedNode ? 'var(--text-primary)' : 'var(--text-muted)',
-                        border: '1px solid var(--border-subtle)',
-                        borderRadius: '6px',
-                        cursor: selectedNode ? 'pointer' : 'not-allowed',
-                        fontWeight: '500',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
                         gap: '8px',
-                        opacity: selectedNode ? 1 : 0.6,
                         transition: 'all 0.2s'
                     }}
                 >
-                    <GitFork size={16} />
+                    {selectedNode ? <GitFork size={16} /> : <Plus size={18} />}
                     {selectedNode
                         ? `Add to ${selectedNode.data.label.length > 15 ? selectedNode.data.label.substring(0, 12) + '...' : selectedNode.data.label}`
-                        : "Add Subgoal"
+                        : "New Goal"
                     }
                 </button>
 
@@ -173,11 +167,20 @@ const Sidebar = ({ onOpenSettings, selectedNode, onAutoLayout }) => {
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        gap: '8px'
+                        gap: '8px',
+                        height: 'auto',
+                        minHeight: '40px'
                     }}
                 >
                     <Layout size={16} />
-                    Auto Layout
+                    <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', lineHeight: '1.2', textAlign: 'left' }}>
+                        <span>Auto Layout</span>
+                        {selectedRoot && (
+                            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                                {selectedRoot.data.label.length > 20 ? selectedRoot.data.label.substring(0, 18) + '...' : selectedRoot.data.label}
+                            </span>
+                        )}
+                    </span>
                 </button>
 
                 {selectedNode && (
