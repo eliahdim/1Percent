@@ -48,6 +48,9 @@ const GoalDetailsModal = ({ goal, onClose, onUpdate, onDelete }) => {
         return new Date(dateString).toLocaleString();
     };
 
+    const progressValue = Math.round(goal.data.progress || 0);
+    const progressColor = progressValue >= 75 ? '#10b981' : progressValue >= 40 ? '#f59e0b' : 'var(--accent-primary)';
+
     return (
         <div style={{
             position: 'fixed',
@@ -64,24 +67,45 @@ const GoalDetailsModal = ({ goal, onClose, onUpdate, onDelete }) => {
         }} onClick={onClose}>
             <div style={{
                 backgroundColor: 'var(--bg-secondary)',
-                width: '500px',
-                maxWidth: '90%',
+                width: '650px',
+                maxWidth: '92%',
                 borderRadius: '12px',
                 border: '1px solid var(--border-subtle)',
                 boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.5)',
                 display: 'flex',
                 flexDirection: 'column',
-                maxHeight: '80vh'
+                maxHeight: '85vh',
+                overflow: 'hidden'
             }} onClick={e => e.stopPropagation()}>
+
+                {/* Progress Bar — flush to top */}
+                <div style={{
+                    width: '100%',
+                    height: '6px',
+                    background: 'var(--bg-tertiary)',
+                    borderRadius: '12px 12px 0 0',
+                    overflow: 'hidden'
+                }}>
+                    <div style={{
+                        width: `${progressValue}%`,
+                        height: '100%',
+                        background: progressColor,
+                        transition: 'width 0.4s ease'
+                    }} />
+                </div>
+
                 {/* Header */}
                 <div style={{
-                    padding: '20px',
-                    borderBottom: '1px solid var(--border-subtle)',
+                    padding: '16px 20px',
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'space-between'
+                    justifyContent: 'space-between',
+                    borderBottom: '1px solid var(--border-subtle)'
                 }}>
-                    <h2 style={{ margin: 0, fontSize: '1.25rem', color: 'var(--text-primary)' }}>Goal Details</h2>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <h2 style={{ margin: 0, fontSize: '1.1rem', color: 'var(--text-primary)' }}>Goal Details</h2>
+                        <span style={{ fontSize: '0.8rem', fontWeight: 'bold', color: progressColor }}>{progressValue}%</span>
+                    </div>
                     <button
                         onClick={onClose}
                         style={{
@@ -97,216 +121,184 @@ const GoalDetailsModal = ({ goal, onClose, onUpdate, onDelete }) => {
                     </button>
                 </div>
 
-                {/* Content */}
-                <div style={{ padding: '24px', overflowY: 'auto', flex: 1 }}>
-                    {/* Title */}
-                    <div style={{ marginBottom: '20px' }}>
-                        <label style={{ display: 'block', fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: '8px' }}>Name</label>
-                        <input
-                            type="text"
-                            value={title}
-                            onChange={(e) => setTitle(e.target.value)}
-                            style={{
-                                width: '100%',
-                                background: 'var(--bg-tertiary)',
-                                border: '1px solid var(--border-subtle)',
-                                color: 'var(--text-primary)',
-                                borderRadius: '6px',
-                                padding: '10px 12px',
-                                fontSize: '1rem',
-                                outline: 'none'
-                            }}
-                        />
-                    </div>
+                {/* Two-Column Content */}
+                <div style={{ padding: '20px', overflowY: 'auto', flex: 1 }}>
+                    <div style={{ display: 'flex', gap: '24px', alignItems: 'stretch' }}>
 
-                    {/* Priority Row */}
-                    <div style={{ marginBottom: '20px' }}>
-                        <label style={{ display: 'block', fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: '8px' }}>Priority</label>
-                        <div
-                            role="radiogroup"
-                            aria-label="Priority selection"
-                            style={{
-                                display: 'flex',
-                                gap: '8px',
-                                width: '100%'
-                            }}
-                        >
-                            {PRIORITY_OPTIONS.map(opt => {
-                                const isSelected = priority === opt.value;
-                                return (
-                                    <button
-                                        key={opt.value}
-                                        onClick={() => setPriority(opt.value)}
-                                        aria-pressed={isSelected}
-                                        role="radio"
-                                        aria-checked={isSelected}
-                                        style={{
-                                            flex: 1,
-                                            padding: '10px 12px',
-                                            background: isSelected ? opt.color : 'var(--bg-tertiary)',
-                                            border: isSelected ? `1px solid ${opt.color}` : '1px solid var(--border-subtle)',
-                                            color: isSelected ? 'white' : 'var(--text-primary)',
-                                            borderRadius: '6px',
-                                            cursor: 'pointer',
-                                            fontSize: '0.9rem',
-                                            fontWeight: isSelected ? '600' : '400',
-                                            outline: 'none',
-                                            transition: 'all 0.2s ease',
-                                        }}
-                                    >
-                                        {opt.label}
-                                    </button>
-                                );
-                            })}
+                        {/* LEFT: Name + Description */}
+                        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+                            {/* Title */}
+                            <div style={{ marginBottom: '16px' }}>
+                                <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Name</label>
+                                <input
+                                    type="text"
+                                    value={title}
+                                    onChange={(e) => setTitle(e.target.value)}
+                                    style={{
+                                        width: '100%',
+                                        background: 'var(--bg-tertiary)',
+                                        border: '1px solid var(--border-subtle)',
+                                        color: 'var(--text-primary)',
+                                        borderRadius: '6px',
+                                        padding: '10px 12px',
+                                        fontSize: '1rem',
+                                        outline: 'none'
+                                    }}
+                                />
+                            </div>
+
+                            {/* Description */}
+                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                                <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Description</label>
+                                <textarea
+                                    value={description}
+                                    onChange={(e) => setDescription(e.target.value)}
+                                    style={{
+                                        width: '100%',
+                                        flex: 1,
+                                        minHeight: '80px',
+                                        background: 'var(--bg-tertiary)',
+                                        border: '1px solid var(--border-subtle)',
+                                        color: 'var(--text-primary)',
+                                        borderRadius: '6px',
+                                        padding: '10px 12px',
+                                        fontSize: '0.9rem',
+                                        outline: 'none',
+                                        resize: 'vertical'
+                                    }}
+                                />
+                            </div>
                         </div>
-                    </div>
 
-                    {/* Progress Display */}
-                    <div style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px', background: 'rgba(0,0,0,0.1)', borderRadius: '8px' }}>
-                        <div>
-                            <span style={{ fontSize: '0.875rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Progress</span>
-                            <span style={{ fontSize: '1.25rem', fontWeight: 'bold', color: 'var(--accent-success)' }}>{Math.round(goal.data.progress || 0)}%</span>
+                        {/* RIGHT: Status + Priority */}
+                        <div style={{ width: '180px', flexShrink: 0 }}>
+                            {/* Status */}
+                            <div style={{ marginBottom: '20px' }}>
+                                <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Status</label>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                    {STATUS_OPTIONS.map(opt => {
+                                        const isSelected = status === opt;
+                                        let bg = 'var(--bg-tertiary)';
+                                        let borderColor = 'var(--border-subtle)';
+
+                                        if (isSelected) {
+                                            if (opt === 'Not Started') { bg = '#ef4444'; borderColor = '#ef4444'; }
+                                            else if (opt === 'In Progress') { bg = '#f59e0b'; borderColor = '#f59e0b'; }
+                                            else if (opt === 'Done') { bg = '#10b981'; borderColor = '#10b981'; }
+                                        }
+
+                                        return (
+                                            <button
+                                                key={opt}
+                                                onClick={() => setStatus(opt)}
+                                                style={{
+                                                    width: '100%',
+                                                    padding: '8px 12px',
+                                                    background: bg,
+                                                    border: `1px solid ${borderColor}`,
+                                                    color: isSelected ? 'white' : 'var(--text-primary)',
+                                                    borderRadius: '6px',
+                                                    cursor: 'pointer',
+                                                    fontSize: '0.85rem',
+                                                    fontWeight: isSelected ? '600' : '400',
+                                                    outline: 'none',
+                                                    transition: 'all 0.2s ease',
+                                                    textAlign: 'left'
+                                                }}
+                                            >
+                                                {opt}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+
+                            {/* Priority */}
+                            <div>
+                                <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Priority</label>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                    {PRIORITY_OPTIONS.map(opt => {
+                                        const isSelected = priority === opt.value;
+                                        return (
+                                            <button
+                                                key={opt.value}
+                                                onClick={() => setPriority(opt.value)}
+                                                style={{
+                                                    width: '100%',
+                                                    padding: '8px 12px',
+                                                    background: isSelected ? opt.color : 'var(--bg-tertiary)',
+                                                    border: isSelected ? `1px solid ${opt.color}` : '1px solid var(--border-subtle)',
+                                                    color: isSelected ? 'white' : 'var(--text-primary)',
+                                                    borderRadius: '6px',
+                                                    cursor: 'pointer',
+                                                    fontSize: '0.85rem',
+                                                    fontWeight: isSelected ? '600' : '400',
+                                                    outline: 'none',
+                                                    transition: 'all 0.2s ease',
+                                                    textAlign: 'left'
+                                                }}
+                                            >
+                                                {opt.label}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
                         </div>
-                        <div style={{ width: '120px', height: '8px', background: 'var(--bg-tertiary)', borderRadius: '4px', overflow: 'hidden' }}>
-                            <div style={{ width: `${goal.data.progress || 0}%`, height: '100%', background: 'var(--accent-success)', transition: 'width 0.3s ease' }} />
-                        </div>
-                    </div>
-
-                    {/* Status Row */}
-                    <div style={{ marginBottom: '20px' }}>
-                        <label style={{ display: 'block', fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: '8px' }}>Status</label>
-                        <div
-                            role="radiogroup"
-                            aria-label="Status selection"
-                            style={{
-                                display: 'flex',
-                                gap: '8px',
-                                width: '100%'
-                            }}
-                        >
-                            {STATUS_OPTIONS.map(opt => {
-                                const isSelected = status === opt;
-                                let bg = 'var(--bg-tertiary)';
-                                let border = 'var(--border-subtle)';
-
-                                if (isSelected) {
-                                    if (opt === 'Not Started') {
-                                        bg = '#ef4444';
-                                        border = '#ef4444';
-                                    } else if (opt === 'In Progress') {
-                                        bg = '#f59e0b';
-                                        border = '#f59e0b';
-                                    } else if (opt === 'Done') {
-                                        bg = '#10b981';
-                                        border = '#10b981';
-                                    }
-                                }
-
-                                return (
-                                    <button
-                                        key={opt}
-                                        onClick={() => setStatus(opt)}
-                                        aria-pressed={isSelected}
-                                        role="radio"
-                                        aria-checked={isSelected}
-                                        style={{
-                                            flex: 1,
-                                            padding: '10px 12px',
-                                            background: bg,
-                                            border: `1px solid ${border}`,
-                                            color: isSelected ? 'white' : 'var(--text-primary)',
-                                            borderRadius: '6px',
-                                            cursor: 'pointer',
-                                            fontSize: '0.9rem',
-                                            fontWeight: isSelected ? '600' : '400',
-                                            outline: 'none',
-                                            transition: 'all 0.2s ease',
-                                            whiteSpace: 'nowrap',
-                                            boxShadow: isSelected ? '0 4px 12px rgba(0,0,0,0.2)' : 'none',
-                                            transform: isSelected ? 'scale(1.02)' : 'scale(1)',
-                                        }}
-                                    >
-                                        {opt}
-                                    </button>
-                                );
-                            })}
-                        </div>
-                    </div>
-
-                    {/* Description */}
-                    <div style={{ marginBottom: '20px' }}>
-                        <label style={{ display: 'block', fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: '8px' }}>Description</label>
-                        <textarea
-                            value={description}
-                            onChange={(e) => setDescription(e.target.value)}
-                            rows={4}
-                            style={{
-                                width: '100%',
-                                background: 'var(--bg-tertiary)',
-                                border: '1px solid var(--border-subtle)',
-                                color: 'var(--text-primary)',
-                                borderRadius: '6px',
-                                padding: '10px 12px',
-                                fontSize: '0.9rem',
-                                outline: 'none',
-                                resize: 'vertical'
-                            }}
-                        />
                     </div>
 
                     {/* Metadata */}
                     <div style={{
-                        marginTop: '24px',
-                        paddingTop: '16px',
+                        marginTop: '20px',
+                        paddingTop: '14px',
                         borderTop: '1px solid var(--border-subtle)',
                         display: 'flex',
-                        flexDirection: 'column',
-                        gap: '12px'
+                        gap: '24px'
                     }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                            <Calendar size={14} />
-                            <span>Created at: {formatDate(goal.data.created_at)}</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                            <Calendar size={13} />
+                            <span>Created: {formatDate(goal.data.created_at)}</span>
                         </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                            <Clock size={14} />
-                            <span>Last updated: {formatDate(goal.data.updated_at)}</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                            <Clock size={13} />
+                            <span>Updated: {formatDate(goal.data.updated_at)}</span>
                         </div>
                     </div>
                 </div>
 
                 {/* Footer */}
                 <div style={{
-                    padding: '20px',
+                    padding: '16px 20px',
                     borderTop: '1px solid var(--border-subtle)',
                     display: 'flex',
                     justifyContent: 'flex-end',
-                    gap: '12px'
+                    gap: '10px'
                 }}>
                     <button
                         onClick={handleDelete}
                         style={{
-                            padding: '10px 20px',
+                            padding: '8px 16px',
                             background: 'transparent',
                             border: '1px solid #ef4444',
                             color: '#ef4444',
                             borderRadius: '6px',
                             cursor: 'pointer',
-                            fontSize: '0.9rem',
+                            fontSize: '0.85rem',
                             marginRight: 'auto'
                         }}
                     >
-                        Delete Goal
+                        Delete
                     </button>
                     <button
                         onClick={onClose}
                         style={{
-                            padding: '10px 20px',
+                            padding: '8px 16px',
                             background: 'transparent',
                             border: '1px solid var(--border-subtle)',
                             color: 'var(--text-primary)',
                             borderRadius: '6px',
                             cursor: 'pointer',
-                            fontSize: '0.9rem'
+                            fontSize: '0.85rem'
                         }}
                     >
                         Cancel
@@ -314,13 +306,13 @@ const GoalDetailsModal = ({ goal, onClose, onUpdate, onDelete }) => {
                     <button
                         onClick={handleSave}
                         style={{
-                            padding: '10px 20px',
+                            padding: '8px 16px',
                             background: 'var(--accent-primary)',
                             border: 'none',
                             color: 'white',
                             borderRadius: '6px',
                             cursor: 'pointer',
-                            fontSize: '0.9rem',
+                            fontSize: '0.85rem',
                             fontWeight: '600'
                         }}
                     >
