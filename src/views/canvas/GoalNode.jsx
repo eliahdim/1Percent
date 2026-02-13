@@ -11,12 +11,11 @@ const getStatusColor = (status) => {
     }
 };
 
-const getPriorityBorder = (priority, selected) => {
-    if (selected) return '2px solid white';
+const getPriorityBorder = (priority) => {
     switch (priority) {
-        case 'high': return '3px solid #ef4444';
-        case 'medium': return '3px solid #f59e0b';
-        case 'low': return '3px solid #3b82f6';
+        case 'high': return '4px solid #ef4444';
+        case 'medium': return '4px solid #f59e0b';
+        case 'low': return '4px solid #3b82f6';
         default: return '1px solid var(--border-subtle)';
     }
 };
@@ -60,7 +59,7 @@ const GoalNode = ({ id, data, isConnectable, selected }) => {
         return data.description.substring(0, maxLength) + '...';
     };
 
-    const priorityBorder = getPriorityBorder(data.priority, selected);
+    const priorityBorder = getPriorityBorder(data.priority);
 
     return (
         <div style={{
@@ -71,7 +70,9 @@ const GoalNode = ({ id, data, isConnectable, selected }) => {
             color: 'var(--text-primary)',
             minWidth: data.isRoot ? '220px' : '160px',
             textAlign: 'center',
-            boxShadow: selected ? '0 0 15px rgba(255,255,255,0.3)' : '0 4px 6px rgba(0,0,0,0.3)',
+            boxShadow: selected
+                ? '0 0 0 2px white, 0 0 20px rgba(255,255,255,0.4)'
+                : '0 4px 6px rgba(0,0,0,0.3)',
             fontSize: data.isRoot ? '1.1rem' : '0.9rem',
             transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
             cursor: 'default',
