@@ -32,10 +32,10 @@ const Goal = {
   /**
    * Create a new goal
    */
-  create: ({ title, description, parentId, status, color, x, y }) => {
+  create: ({ title, description, parentId, status, color, x, y, priority }) => {
     const stmt = db.prepare(`
-      INSERT INTO goals (title, description, parent_id, status, color, x, y)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO goals (title, description, parent_id, status, color, x, y, priority)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `);
     const result = stmt.run(
       title,
@@ -43,8 +43,9 @@ const Goal = {
       parentId || null,
       status || 'Not Started',
       color || null,
-      x || 0, // Use provided x or default to 0
-      y || 0  // Use provided y or default to 0
+      x || 0,
+      y || 0,
+      priority || 'none'
     );
     return Goal.findById(result.lastInsertRowid);
   },
@@ -52,7 +53,7 @@ const Goal = {
   /**
    * Update an existing goal
    */
-  update: (id, { title, description, status, color, x, y }) => {
+  update: (id, { title, description, status, color, x, y, priority }) => {
     const updates = [];
     const values = [];
 
@@ -79,6 +80,10 @@ const Goal = {
     if (y !== undefined) {
       updates.push('y = ?');
       values.push(y);
+    }
+    if (priority !== undefined) {
+      updates.push('priority = ?');
+      values.push(priority);
     }
 
     if (updates.length === 0) {

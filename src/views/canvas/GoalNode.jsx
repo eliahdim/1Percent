@@ -11,6 +11,16 @@ const getStatusColor = (status) => {
     }
 };
 
+const getPriorityBorder = (priority, selected) => {
+    if (selected) return '2px solid white';
+    switch (priority) {
+        case 'high': return '3px solid #ef4444';
+        case 'medium': return '3px solid #f59e0b';
+        case 'low': return '3px solid #3b82f6';
+        default: return '1px solid var(--border-subtle)';
+    }
+};
+
 const GoalNode = ({ id, data, isConnectable, selected }) => {
     const { updateGoal } = useGoalContext();
     const { settings } = useSettings();
@@ -50,12 +60,14 @@ const GoalNode = ({ id, data, isConnectable, selected }) => {
         return data.description.substring(0, maxLength) + '...';
     };
 
+    const priorityBorder = getPriorityBorder(data.priority, selected);
+
     return (
         <div style={{
             padding: data.isRoot ? '20px 30px' : '10px 15px',
             borderRadius: '12px',
             background: statusColor,
-            border: selected ? '2px solid white' : '1px solid var(--border-subtle)',
+            border: priorityBorder,
             color: 'var(--text-primary)',
             minWidth: data.isRoot ? '220px' : '160px',
             textAlign: 'center',

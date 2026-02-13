@@ -103,7 +103,7 @@ const goalController = {
   updateGoal: (req, res) => {
     try {
       const { id } = req.params;
-      const { title, description, status, x, y } = req.body;
+      const { title, description, status, x, y, priority } = req.body;
 
       const existingGoal = Goal.findById(Number(id));
       if (!existingGoal) {
@@ -118,11 +118,10 @@ const goalController = {
       const updatedGoal = Goal.update(Number(id), {
         title: title?.trim(),
         description: description?.trim(),
-        title: title?.trim(),
-        description: description?.trim(),
         status,
         x,
-        y
+        y,
+        priority
       });
 
       res.json(updatedGoal);

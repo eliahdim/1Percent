@@ -22,6 +22,7 @@ const transformData = (goals) => {
                 description: goal.description,
                 status: goal.status,
                 color: goal.color,
+                priority: goal.priority, // Added priority
                 progress: goal.progress, // Added progress
                 created_at: goal.created_at,
                 updated_at: goal.updated_at,

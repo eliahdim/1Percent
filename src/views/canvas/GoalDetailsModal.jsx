@@ -2,17 +2,25 @@ import React, { useState, useEffect } from 'react';
 import { X, Calendar, Clock } from 'lucide-react';
 
 const STATUS_OPTIONS = ['Not Started', 'In Progress', 'Done'];
+const PRIORITY_OPTIONS = [
+    { value: 'none', label: 'None', color: 'var(--text-muted)' },
+    { value: 'low', label: 'Low', color: '#3b82f6' },
+    { value: 'medium', label: 'Medium', color: '#f59e0b' },
+    { value: 'high', label: 'High', color: '#ef4444' }
+];
 
 const GoalDetailsModal = ({ goal, onClose, onUpdate, onDelete }) => {
     const [title, setTitle] = useState(goal?.data?.label || '');
     const [description, setDescription] = useState(goal?.data?.description || '');
     const [status, setStatus] = useState(goal?.data?.status || 'Not Started');
+    const [priority, setPriority] = useState(goal?.data?.priority || 'none');
 
     useEffect(() => {
         if (goal) {
             setTitle(goal.data.label);
             setDescription(goal.data.description || '');
             setStatus(goal.data.status || 'Not Started');
+            setPriority(goal.data.priority || 'none');
         }
     }, [goal]);
 
@@ -22,7 +30,8 @@ const GoalDetailsModal = ({ goal, onClose, onUpdate, onDelete }) => {
         onUpdate(goal.id, {
             title,
             description,
-            status
+            status,
+            priority
         });
         onClose();
     };
@@ -108,6 +117,48 @@ const GoalDetailsModal = ({ goal, onClose, onUpdate, onDelete }) => {
                                 outline: 'none'
                             }}
                         />
+                    </div>
+
+                    {/* Priority Row */}
+                    <div style={{ marginBottom: '20px' }}>
+                        <label style={{ display: 'block', fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: '8px' }}>Priority</label>
+                        <div
+                            role="radiogroup"
+                            aria-label="Priority selection"
+                            style={{
+                                display: 'flex',
+                                gap: '8px',
+                                width: '100%'
+                            }}
+                        >
+                            {PRIORITY_OPTIONS.map(opt => {
+                                const isSelected = priority === opt.value;
+                                return (
+                                    <button
+                                        key={opt.value}
+                                        onClick={() => setPriority(opt.value)}
+                                        aria-pressed={isSelected}
+                                        role="radio"
+                                        aria-checked={isSelected}
+                                        style={{
+                                            flex: 1,
+                                            padding: '10px 12px',
+                                            background: isSelected ? opt.color : 'var(--bg-tertiary)',
+                                            border: isSelected ? `1px solid ${opt.color}` : '1px solid var(--border-subtle)',
+                                            color: isSelected ? 'white' : 'var(--text-primary)',
+                                            borderRadius: '6px',
+                                            cursor: 'pointer',
+                                            fontSize: '0.9rem',
+                                            fontWeight: isSelected ? '600' : '400',
+                                            outline: 'none',
+                                            transition: 'all 0.2s ease',
+                                        }}
+                                    >
+                                        {opt.label}
+                                    </button>
+                                );
+                            })}
+                        </div>
                     </div>
 
                     {/* Progress Display */}
