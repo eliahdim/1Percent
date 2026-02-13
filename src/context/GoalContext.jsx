@@ -6,24 +6,37 @@ const GoalContext = createContext();
 
 export const useGoalContext = () => useContext(GoalContext);
 
+// Helper to count all descendants recursively
+const countDescendants = (goal) => {
+    if (!goal.subgoals || goal.subgoals.length === 0) return 0;
+    return goal.subgoals.reduce((acc, sub) => acc + 1 + countDescendants(sub), 0);
+};
+
 // Helper to transform backend tree data to React Flow nodes/edges
 const transformData = (goals) => {
     let nodes = [];
     let edges = [];
 
-    const traverse = (goal, x = 0, y = 0, level = 0) => {
+    const traverse = (goal, x = 0, y = 0, level = 0, isParentVisible = true) => {
+        const isVisible = isParentVisible;
+        const isCollapsed = goal.collapsed === 1;
+
         // Create Node
         nodes.push({
             id: goal.id.toString(),
             type: 'goal',
-            position: (goal.x !== 0 || goal.y !== 0) ? { x: goal.x, y: goal.y } : { x, y: y }, // Use persisted position if available
+            position: (goal.x !== 0 || goal.y !== 0) ? { x: goal.x, y: goal.y } : { x, y: y },
+            hidden: !isVisible,
             data: {
                 label: goal.title,
                 description: goal.description,
                 status: goal.status,
                 color: goal.color,
-                priority: goal.priority, // Added priority
-                progress: goal.progress, // Added progress
+                priority: goal.priority,
+                progress: goal.progress,
+                collapsed: isCollapsed,
+                hasChildren: goal.subgoals && goal.subgoals.length > 0,
+                childCount: countDescendants(goal),
                 created_at: goal.created_at,
                 updated_at: goal.updated_at,
                 isRoot: level === 0
@@ -37,18 +50,17 @@ const transformData = (goals) => {
                     id: `e${goal.id}-${subgoal.id}`,
                     source: goal.id.toString(),
                     target: subgoal.id.toString(),
-                    animated: true
+                    animated: true,
+                    hidden: !isVisible || isCollapsed
                 });
 
-                // Simple recursive positioning (can be improved by autoLayout)
-                // Spacing children horizontally
-                traverse(subgoal, x + (index * 200) - ((goal.subgoals.length - 1) * 100), y + 200, level + 1);
+                // Children are NOT visible if THIS node is collapsed
+                traverse(subgoal, x + (index * 200) - ((goal.subgoals.length - 1) * 100), y + 200, level + 1, isVisible && !isCollapsed);
             });
         }
     };
 
     goals.forEach((goal, i) => {
-        // Place root goals spaced out
         traverse(goal, i * 400, 50);
     });
 
@@ -62,7 +74,6 @@ export const GoalProvider = ({ children }) => {
 
     const refreshGoals = useCallback(async () => {
         try {
-            // setLoading(true); // silent refresh is better for UX if we are just adding
             const goals = await api.fetchGoals();
             const { nodes: computedNodes, edges: newEdges } = transformData(goals);
 
@@ -110,7 +121,6 @@ export const GoalProvider = ({ children }) => {
 
     const addSubgoal = useCallback(async (parentId) => {
         try {
-            // Find parent to get its position
             const parentNode = nodes.find(n => n.id === parentId);
             const parentX = parentNode?.position?.x || 0;
             const parentY = parentNode?.position?.y || 0;
@@ -120,7 +130,7 @@ export const GoalProvider = ({ children }) => {
                 description: 'Actionable step',
                 parentId: parentId,
                 x: parentX,
-                y: parentY + 200 // Spawn below parent
+                y: parentY + 200
             });
             await refreshGoals();
         } catch (error) {
@@ -146,10 +156,14 @@ export const GoalProvider = ({ children }) => {
         }
     }, [refreshGoals]);
 
-    // Custom Drag Logic: Move subtree (Placeholder for now, implementation depends on if we want to save position to DB)
-    //const onNodeDrag = useCallback((event, node, nodes) => {
-    //    // TODO: potential updates
-    //}, []);
+    const toggleCollapse = useCallback(async (id, currentCollapsed) => {
+        try {
+            await api.updateGoal(id, { collapsed: !currentCollapsed });
+            await refreshGoals();
+        } catch (error) {
+            console.error("Failed to toggle collapse:", error);
+        }
+    }, [refreshGoals]);
 
     const deleteGoal = useCallback(async (id) => {
         try {
@@ -171,6 +185,7 @@ export const GoalProvider = ({ children }) => {
         addSubgoal,
         updateGoal,
         updateGoals,
+        toggleCollapse,
         deleteGoal,
         loading,
         refreshGoals

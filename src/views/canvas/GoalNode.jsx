@@ -1,5 +1,6 @@
 import React, { memo, useState, useCallback } from 'react';
 import { Handle, Position } from '@xyflow/react';
+import { ChevronDown, ChevronRight } from 'lucide-react';
 import { useGoalContext } from '../../context/GoalContext';
 import { useSettings } from '../../context/SettingsContext';
 
@@ -21,10 +22,11 @@ const getPriorityBorder = (priority) => {
 };
 
 const GoalNode = ({ id, data, isConnectable, selected }) => {
-    const { updateGoal } = useGoalContext();
+    const { updateGoal, toggleCollapse } = useGoalContext();
     const { settings } = useSettings();
     const [editingField, setEditingField] = useState(null); // 'title' | 'description' | null
     const [editValue, setEditValue] = useState('');
+    const [isHovered, setIsHovered] = useState(false);
 
     const statusColor = getStatusColor(data.status);
 
@@ -61,23 +63,29 @@ const GoalNode = ({ id, data, isConnectable, selected }) => {
 
     const priorityBorder = getPriorityBorder(data.priority);
 
+    const showCollapseButton = data.hasChildren && (isHovered || data.collapsed);
+
     return (
-        <div style={{
-            padding: data.isRoot ? '20px 30px' : '10px 15px',
-            borderRadius: '12px',
-            background: statusColor,
-            border: priorityBorder,
-            color: 'var(--text-primary)',
-            minWidth: data.isRoot ? '220px' : '160px',
-            textAlign: 'center',
-            boxShadow: selected
-                ? '0 0 0 2px white, 0 0 20px rgba(255,255,255,0.4)'
-                : '0 4px 6px rgba(0,0,0,0.3)',
-            fontSize: data.isRoot ? '1.1rem' : '0.9rem',
-            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-            cursor: 'default',
-            position: 'relative'
-        }}>
+        <div
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
+            style={{
+                padding: data.isRoot ? '20px 30px' : '10px 15px',
+                borderRadius: '12px',
+                background: statusColor,
+                border: priorityBorder,
+                color: 'var(--text-primary)',
+                minWidth: data.isRoot ? '220px' : '160px',
+                textAlign: 'center',
+                boxShadow: selected
+                    ? '0 0 0 2px white, 0 0 20px rgba(255,255,255,0.4)'
+                    : '0 4px 6px rgba(0,0,0,0.3)',
+                fontSize: data.isRoot ? '1.1rem' : '0.9rem',
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                cursor: 'default',
+                position: 'relative'
+            }}
+        >
             <Handle
                 type="target"
                 position={Position.Top}
@@ -220,12 +228,48 @@ const GoalNode = ({ id, data, isConnectable, selected }) => {
                 </div>
             </div>
 
-            <Handle
-                type="source"
-                position={Position.Bottom}
-                isConnectable={isConnectable}
-                style={{ background: 'var(--text-muted)' }}
-            />
+            {/* Collapse Toggle */}
+            {showCollapseButton && (
+                <button
+                    className="nodrag"
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        toggleCollapse(id, data.collapsed);
+                    }}
+                    style={{
+                        position: 'absolute',
+                        bottom: '-12px',
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        background: 'rgba(0,0,0,0.7)',
+                        border: '1px solid rgba(255,255,255,0.2)',
+                        color: 'white',
+                        borderRadius: '12px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        padding: '2px 8px',
+                        fontSize: '0.65rem',
+                        fontWeight: 'bold',
+                        zIndex: 10,
+                        backdropFilter: 'blur(4px)',
+                        transition: 'all 0.2s ease'
+                    }}
+                >
+                    {data.collapsed ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
+                    {data.collapsed && <span>{data.childCount}</span>}
+                </button>
+            )}
+
+            {!data.collapsed && (
+                <Handle
+                    type="source"
+                    position={Position.Bottom}
+                    isConnectable={isConnectable}
+                    style={{ background: 'var(--text-muted)' }}
+                />
+            )}
         </div>
     );
 };

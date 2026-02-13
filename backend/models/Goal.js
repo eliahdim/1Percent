@@ -53,7 +53,7 @@ const Goal = {
   /**
    * Update an existing goal
    */
-  update: (id, { title, description, status, color, x, y, priority }) => {
+  update: (id, { title, description, status, color, x, y, priority, collapsed }) => {
     const updates = [];
     const values = [];
 
@@ -84,6 +84,10 @@ const Goal = {
     if (priority !== undefined) {
       updates.push('priority = ?');
       values.push(priority);
+    }
+    if (collapsed !== undefined) {
+      updates.push('collapsed = ?');
+      values.push(collapsed ? 1 : 0);
     }
 
     if (updates.length === 0) {
