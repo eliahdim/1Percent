@@ -7,219 +7,198 @@ import { getRoot } from '../../utils/dragLogic';
 const Sidebar = ({ onOpenSettings, selectedNode, onAutoLayout }) => {
     const { nodes, edges, addGoal, addSubgoal, deleteGoal } = useGoalContext();
     const { getViewport } = useReactFlow();
+    const [isConfirmingDelete, setIsConfirmingDelete] = React.useState(false);
 
-    // Only show root goals (isRoot is added in transformData)
+    // Reset confirmation state when selected node changes
+    React.useEffect(() => {
+        setIsConfirmingDelete(false);
+    }, [selectedNode]);
+
+    // Only root-level goals
     const goalNodes = nodes.filter(n => n.type === 'goal' && n.data.isRoot);
 
-    // Calculate Global Progress (Average of all root goals)
+    // Average progress of all root goals
     const globalProgress = goalNodes.length > 0
         ? Math.round(goalNodes.reduce((acc, curr) => acc + (curr.data.progress || 0), 0) / goalNodes.length)
         : 0;
 
     const onAddGoalClick = () => {
         const { x, y, zoom } = getViewport();
-        // Calculate center of the viewport
-        // We assume generic viewport size (e.g. window center), or we can just use the center of visible area inverted
-        // Center of screen in flow coordinates = -viewportX / zoom + screenWidth/2 / zoom
-        const centerX = -x / zoom + (window.innerWidth - 300) / 2 / zoom; // Subtract sidebar width approx
+        const centerX = -x / zoom + (window.innerWidth - 300) / 2 / zoom;
         const centerY = -y / zoom + window.innerHeight / 2 / zoom;
-
         addGoal('New Goal', Math.round(centerX), Math.round(centerY));
     };
 
     const onAddSubgoalClick = () => {
         if (selectedNode) {
             addSubgoal(selectedNode.id);
-        } else {
-            alert("Please select exactly one goal to add a subgoal to.");
         }
     };
 
-    // Determine root of selected node for auto-layout
-    const selectedRoot = selectedNode ? getRoot(nodes, (useGoalContext().edges || []), selectedNode.id) : null;
+    // Find root of selected node for partial auto-layout
+    const selectedRoot = selectedNode ? getRoot(nodes, edges, selectedNode.id) : null;
 
     const onAutoLayoutClick = () => {
         if (onAutoLayout) {
-            // Pass the root ID if a node is selected, otherwise null (full layout)
             onAutoLayout(selectedRoot ? selectedRoot.id : null);
         }
     };
 
     const onDeleteClick = () => {
         if (selectedNode) {
-            if (window.confirm(`Are you sure you want to delete "${selectedNode.data.label}"?`)) {
+            if (isConfirmingDelete) {
                 deleteGoal(selectedNode.id);
+                setIsConfirmingDelete(false);
+            } else {
+                setIsConfirmingDelete(true);
             }
         }
     };
 
+    const truncateLabel = (label, max = 15) =>
+        label.length > max ? label.substring(0, max - 3) + '...' : label;
+
     return (
-        <aside style={{
-            width: 'var(--sidebar-width)',
-            backgroundColor: 'var(--bg-secondary)',
-            borderRight: '1px solid var(--border-subtle)',
-            display: 'flex',
-            flexDirection: 'column',
-            zIndex: 10,
-            height: '100%'
-        }}>
-            {/* Header */}
-            <div style={{ padding: '20px', borderBottom: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <h1 style={{ fontSize: '1.2rem', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '10px', margin: 0 }}>
-                    <Trophy size={20} color="var(--accent-primary)" />
+        <aside className="sidebar" aria-label="Goal management sidebar">
+            {/* ── Header ── */}
+            <div className="sidebar-header">
+                <h1 className="sidebar-brand">
+                    <Trophy size={22} color="var(--accent-primary)" aria-hidden="true" />
                     1%
                 </h1>
                 <button
+                    className="btn btn-ghost btn-icon"
                     onClick={onOpenSettings}
-                    style={{
-                        background: 'transparent',
-                        border: 'none',
-                        color: 'var(--text-muted)',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        transition: 'color 0.2s'
-                    }}
-                    onMouseEnter={(e) => e.currentTarget.style.color = 'var(--text-primary)'}
-                    onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-muted)'}
+                    aria-label="Open settings"
                 >
                     <Settings size={20} />
                 </button>
             </div>
 
-            {/* Goals List */}
-            <div style={{ flex: 1, overflowY: 'auto', padding: '20px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
-                    <h3 style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--text-muted)', margin: 0 }}>
-                        Your Goals
-                    </h3>
+            {/* ── Goals List ── */}
+            <nav className="sidebar-content" aria-label="Goal list">
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-5)' }}>
+                    <h2 className="sidebar-section-title">Your Goals</h2>
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-                        <span style={{ fontSize: '0.9rem', fontWeight: 'bold', color: 'var(--accent-success)' }}>
+                        <span style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-bold)', color: 'var(--accent-success)' }}>
                             {globalProgress}%
                         </span>
-                        <div style={{ width: '60px', height: '4px', background: 'var(--bg-tertiary)', borderRadius: '2px', marginTop: '4px', overflow: 'hidden' }}>
-                            <div style={{ width: `${globalProgress}%`, height: '100%', background: 'var(--accent-success)', transition: 'width 0.5s ease' }} />
+                        <div className="global-progress-track" role="progressbar" aria-valuenow={globalProgress} aria-valuemin={0} aria-valuemax={100} aria-label="Overall goal progress">
+                            <div className="global-progress-fill" style={{ width: `${globalProgress}%` }} />
                         </div>
                     </div>
                 </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    {goalNodes.map((node) => (
-                        <div
-                            key={node.id}
-                            style={{
-                                padding: '10px',
-                                borderRadius: '6px',
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '10px',
-                                color: 'var(--text-secondary)',
-                                transition: 'background 0.2s'
-                            }}
-                            onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-tertiary)'}
-                            onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-                        >
-                            <Target size={16} />
-                            <span style={{
-                                whiteSpace: 'nowrap',
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                fontSize: '0.9rem',
-                                flex: 1
-                            }}>
-                                {node.data.label}
-                            </span>
-                            {node.data.progress !== undefined && (
-                                <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: 'var(--accent-success)' }}>
-                                    {Math.round(node.data.progress)}%
-                                </span>
-                            )}
+                {goalNodes.length === 0 ? (
+                    <div className="sidebar-empty">
+                        <div className="sidebar-empty-icon">
+                            <Target size={32} aria-hidden="true" />
                         </div>
-                    ))}
-                </div>
-            </div>
+                        <p className="sidebar-empty-text">
+                            Create your first goal to get started on your journey.
+                        </p>
+                    </div>
+                ) : (
+                    <div role="list" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+                        {goalNodes.map((node) => {
+                            const isActive = selectedNode?.id === node.id;
+                            return (
+                                <button
+                                    key={node.id}
+                                    role="listitem"
+                                    className={`sidebar-goal-item${isActive ? ' sidebar-goal-item--active' : ''}`}
+                                    aria-current={isActive ? 'true' : undefined}
+                                    tabIndex={0}
+                                    onClick={() => {
+                                        /* Future: could scroll-to-node or select it */
+                                    }}
+                                >
+                                    <Target size={16} aria-hidden="true" />
+                                    <span style={{
+                                        whiteSpace: 'nowrap',
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis',
+                                        flex: 1
+                                    }}>
+                                        {node.data.label}
+                                    </span>
+                                    {node.data.progress !== undefined && (
+                                        <span style={{
+                                            fontSize: 'var(--text-xs)',
+                                            fontWeight: 'var(--font-bold)',
+                                            color: node.data.progress >= 100
+                                                ? 'var(--accent-success)'
+                                                : 'var(--text-muted)'
+                                        }}>
+                                            {Math.round(node.data.progress)}%
+                                        </span>
+                                    )}
+                                </button>
+                            );
+                        })}
+                    </div>
+                )}
+            </nav>
 
-            {/* Footer / Controls */}
-            <div style={{ padding: '15px', borderTop: '1px solid var(--border-subtle)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {/* ── Footer Controls ── */}
+            <div className="sidebar-footer">
                 <button
+                    className={`btn btn-full ${selectedNode ? 'btn-secondary' : 'btn-primary'}`}
                     onClick={() => selectedNode ? onAddSubgoalClick() : onAddGoalClick()}
-                    style={{
-                        width: '100%',
-                        padding: '10px',
-                        background: selectedNode ? 'var(--bg-tertiary)' : 'var(--accent-primary)',
-                        color: selectedNode ? 'var(--text-primary)' : 'white',
-                        border: selectedNode ? '1px solid var(--border-subtle)' : 'none',
-                        borderRadius: '6px',
-                        cursor: 'pointer',
-                        fontWeight: '600',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '8px',
-                        transition: 'all 0.2s'
-                    }}
+                    aria-label={selectedNode
+                        ? `Add subgoal to ${selectedNode.data.label}`
+                        : 'Create new root goal'
+                    }
                 >
-                    {selectedNode ? <GitFork size={16} /> : <Plus size={18} />}
+                    {selectedNode ? <GitFork size={16} aria-hidden="true" /> : <Plus size={18} aria-hidden="true" />}
                     {selectedNode
-                        ? `Add to ${selectedNode.data.label.length > 15 ? selectedNode.data.label.substring(0, 12) + '...' : selectedNode.data.label}`
-                        : "New Goal"
+                        ? `Add to ${truncateLabel(selectedNode.data.label)}`
+                        : 'New Goal'
                     }
                 </button>
 
                 <button
+                    className="btn btn-secondary btn-full"
                     onClick={onAutoLayoutClick}
-                    style={{
-                        width: '100%',
-                        padding: '10px',
-                        background: 'var(--bg-tertiary)',
-                        color: 'var(--text-primary)',
-                        border: '1px solid var(--border-subtle)',
-                        borderRadius: '6px',
-                        cursor: 'pointer',
-                        fontWeight: '500',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '8px',
-                        height: 'auto',
-                        minHeight: '40px'
-                    }}
+                    aria-label={selectedRoot
+                        ? `Auto layout tree: ${selectedRoot.data.label}`
+                        : 'Auto layout all goals'
+                    }
                 >
-                    <Layout size={16} />
-                    <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', lineHeight: '1.2', textAlign: 'left' }}>
+                    <Layout size={16} aria-hidden="true" />
+                    <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', lineHeight: 'var(--leading-tight)', textAlign: 'left' }}>
                         <span>Auto Layout</span>
                         {selectedRoot && (
-                            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                                {selectedRoot.data.label.length > 20 ? selectedRoot.data.label.substring(0, 18) + '...' : selectedRoot.data.label}
+                            <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', fontWeight: 'var(--font-normal)' }}>
+                                {truncateLabel(selectedRoot.data.label, 20)}
                             </span>
                         )}
                     </span>
                 </button>
 
                 {selectedNode && (
-                    <button
-                        onClick={onDeleteClick}
-                        title={`Delete "${selectedNode.data.label}"`}
-                        style={{
-                            width: '100%',
-                            padding: '10px',
-                            background: '#3b1212',
-                            color: '#ef4444',
-                            border: '1px solid #ef4444',
-                            borderRadius: '6px',
-                            cursor: 'pointer',
-                            fontWeight: '500',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '8px',
-                            transition: 'all 0.2s'
-                        }}
-                    >
-                        <Trash2 size={16} />
-                        Delete
-                    </button>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+                        {isConfirmingDelete ? (
+                            <div className="confirm-bar" style={{ padding: 'var(--space-1) var(--space-2)' }}>
+                                <span className="confirm-bar-message" style={{ fontSize: 'var(--text-xs)' }}>Are you sure?</span>
+                                <button className="btn btn-ghost" onClick={() => setIsConfirmingDelete(false)} style={{ padding: '2px 6px', fontSize: 'var(--text-xs)' }}>
+                                    Cancel
+                                </button>
+                                <button className="btn btn-danger" onClick={onDeleteClick} style={{ padding: '4px 10px', fontSize: 'var(--text-xs)' }}>
+                                    Confirm
+                                </button>
+                            </div>
+                        ) : (
+                            <button
+                                className="btn btn-danger btn-full"
+                                onClick={onDeleteClick}
+                                aria-label={`Delete goal: ${selectedNode.data.label}`}
+                            >
+                                <Trash2 size={16} aria-hidden="true" />
+                                Delete
+                            </button>
+                        )}
+                    </div>
                 )}
             </div>
         </aside>

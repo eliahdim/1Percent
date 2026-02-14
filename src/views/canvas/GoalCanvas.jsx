@@ -13,21 +13,21 @@ import GoalDetailsModal from './GoalDetailsModal';
 import { getLayoutedElements } from '../../utils/autoLayout';
 import { useGoalContext } from '../../context/GoalContext';
 import { moveSubtree, getDescendants } from '../../utils/dragLogic';
+import { AlertTriangle, Trash2, X } from 'lucide-react';
 
 const nodeTypes = {
     goal: GoalNode,
 };
 
-// Internal component that uses hooks requiring ReactFlowProvider
 const GoalCanvasInner = ({ onSelectedNodeChange, onAutoLayoutReady }) => {
-    // Consume state from Context
     const {
         nodes, setNodes, onNodesChange,
         edges, setEdges, onEdgesChange,
-        updateGoal, updateGoals, deleteGoal
+        updateGoal, updateGoals, deleteGoal, loading
     } = useGoalContext();
 
     const [selectedGoalForModal, setSelectedGoalForModal] = useState(null);
+    const [confirmDeleteNode, setConfirmDeleteNode] = useState(null);
 
     const onNodeDoubleClick = useCallback((event, node) => {
         setSelectedGoalForModal(node);
@@ -50,41 +50,21 @@ const GoalCanvasInner = ({ onSelectedNodeChange, onAutoLayoutReady }) => {
             const descendants = getDescendants(nodes, edges, rootId);
             const subtreeIds = new Set([rootId, ...descendants]);
             nodesToLayout = nodes.filter(n => subtreeIds.has(n.id));
-
-            // Filter edges that connect nodes within the subtree
             edgesToLayout = edges.filter(e => subtreeIds.has(e.source) && subtreeIds.has(e.target));
         }
 
-        const { nodes: layoutedNodes } = getLayoutedElements(
-            nodesToLayout,
-            edgesToLayout,
-            'TB'
-        );
+        const { nodes: layoutedNodes } = getLayoutedElements(nodesToLayout, edgesToLayout, 'TB');
 
-        // Map layouted nodes back to full node list or update their positions
-        // If we are doing partial layout, we only want to update the positions of the involved nodes
-        // AND we want to persist them.
-
-        // 1. Update State
         if (rootId) {
             const layoutedNodeMap = new Map(layoutedNodes.map(n => [n.id, n]));
-
-            const newNodes = nodes.map(n => {
-                if (layoutedNodeMap.has(n.id)) {
-                    return layoutedNodeMap.get(n.id);
-                }
-                return n;
-            });
+            const newNodes = nodes.map(n => layoutedNodeMap.has(n.id) ? layoutedNodeMap.get(n.id) : n);
             setNodes(newNodes);
-            // Edges don't change in layout usually, but if dagre changes them (e.g. points), we might need to update. 
-            // Our getLayoutedElements doesn't change edges, so we can skip setEdges for partial.
         } else {
             setNodes([...layoutedNodes]);
-            setEdges([...edgesToLayout]); // edgesToLayout is all edges in full mode
+            setEdges([...edgesToLayout]);
             window.requestAnimationFrame(() => fitView({ duration: 400 }));
         }
 
-        // 2. Persist Changes
         const updates = layoutedNodes.map(n => ({
             id: n.id,
             updates: {
@@ -93,13 +73,10 @@ const GoalCanvasInner = ({ onSelectedNodeChange, onAutoLayoutReady }) => {
             }
         }));
 
-        if (updates.length > 0) {
-            updateGoals(updates);
-        }
+        if (updates.length > 0) updateGoals(updates);
 
     }, [nodes, edges, setNodes, setEdges, fitView, updateGoals]);
 
-    // -- Recursive Drag Logic --
     const onNodeDragStart = (event, node) => {
         draggingNodeRef.current = node;
         lastPosRef.current = { ...node.position };
@@ -110,7 +87,6 @@ const GoalCanvasInner = ({ onSelectedNodeChange, onAutoLayoutReady }) => {
             x: node.position.x - lastPosRef.current.x,
             y: node.position.y - lastPosRef.current.y
         };
-
         lastPosRef.current = { ...node.position };
         setNodes((nds) => moveSubtree(nds, edges, node, delta));
     };
@@ -118,11 +94,8 @@ const GoalCanvasInner = ({ onSelectedNodeChange, onAutoLayoutReady }) => {
     const onNodeDragStop = (event, node) => {
         const draggedNode = draggingNodeRef.current;
         if (draggedNode) {
-            // Identify all nodes that moved (dragged node + descendants)
             const descendants = getDescendants(nodes, edges, draggedNode.id);
             const nodesToUpdateIds = [draggedNode.id, ...Array.from(descendants)];
-
-            // Prepare batch update
             const updates = [];
 
             nodesToUpdateIds.forEach(nodeId => {
@@ -138,58 +111,52 @@ const GoalCanvasInner = ({ onSelectedNodeChange, onAutoLayoutReady }) => {
                 }
             });
 
-            if (updates.length > 0) {
-                updateGoals(updates);
-            }
+            if (updates.length > 0) updateGoals(updates);
         }
-
         draggingNodeRef.current = null;
         lastPosRef.current = null;
     };
-    // --------------------------
 
     const onDeleteNodes = useCallback((deletedNodes) => {
-        // This is called by React Flow when someone presses Backspace/Delete
-        // We handle it manually to add confirmation
         if (deletedNodes.length > 0) {
-            const node = deletedNodes[0];
-            const confirmDelete = window.confirm(`Are you sure you want to delete "${node.data.label}"?`);
-            if (confirmDelete) {
-                deleteGoal(node.id);
-            } else {
-                // If cancelled, we want to put the node back or just prevent deletion
-                // Since onNodesDelete happens AFTER deletion, we might need a different approach 
-                // but React Flow nodes are controlled by our context 'nodes' state.
-                // refreshGoals() will bring it back if we don't delete on backend.
-            }
+            // Instead of window.confirm, show our custom UI
+            setConfirmDeleteNode(deletedNodes[0]);
         }
-    }, [deleteGoal]);
+    }, []);
 
     const selectedNode = useMemo(() => nodes.find(n => n.selected), [nodes]);
     const onLayoutRef = useRef(onLayout);
 
-    // Update ref when onLayout changes
     useEffect(() => {
         onLayoutRef.current = onLayout;
     }, [onLayout]);
 
-    // Notify parent of selected node changes
     useEffect(() => {
-        if (onSelectedNodeChange) {
-            onSelectedNodeChange(selectedNode);
-        }
+        if (onSelectedNodeChange) onSelectedNodeChange(selectedNode);
     }, [selectedNode, onSelectedNodeChange]);
 
-    // Expose auto-layout function to parent (only once)
     useEffect(() => {
         if (onAutoLayoutReady) {
-            // Provide a stable wrapper that always calls the latest onLayout
             onAutoLayoutReady((...args) => onLayoutRef.current(...args));
         }
     }, [onAutoLayoutReady]);
 
+    const handleConfirmDelete = () => {
+        if (confirmDeleteNode) {
+            deleteGoal(confirmDeleteNode.id);
+            setConfirmDeleteNode(null);
+        }
+    };
+
     return (
         <div style={{ flex: 1, height: '100%', position: 'relative' }}>
+            {loading && (
+                <div className="loading-overlay" aria-busy="true" aria-label="Loading your goals">
+                    <div className="loading-spinner" />
+                    <div className="loading-text">Manifesting your ambitions...</div>
+                </div>
+            )}
+
             <ReactFlow
                 nodes={nodes}
                 edges={edges}
@@ -208,12 +175,38 @@ const GoalCanvasInner = ({ onSelectedNodeChange, onAutoLayoutReady }) => {
             >
                 <Controls style={{ fill: 'white' }} />
                 <MiniMap
-                    nodeStrokeColor="#007bff"
-                    nodeColor="#2a2a2a"
+                    nodeStrokeColor="var(--accent-primary)"
+                    nodeColor="var(--bg-tertiary)"
                     maskColor="rgba(0,0,0, 0.4)"
                 />
-                <Background gap={16} size={1} color="#333" />
+                <Background gap={16} size={1} color="var(--border-subtle)" />
             </ReactFlow>
+
+            {/* Custom accessible confirm bar for deletion */}
+            {confirmDeleteNode && (
+                <div style={{
+                    position: 'absolute',
+                    top: '20px',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    zIndex: 100,
+                    width: 'auto',
+                    minWidth: '320px'
+                }}>
+                    <div className="confirm-bar" role="alert">
+                        <AlertTriangle size={18} color="var(--accent-danger)" />
+                        <span className="confirm-bar-message">
+                            Delete "{confirmDeleteNode.data.label}" and all its subgoals?
+                        </span>
+                        <button className="btn btn-ghost" onClick={() => setConfirmDeleteNode(null)} style={{ padding: '4px 8px' }}>
+                            Cancel
+                        </button>
+                        <button className="btn btn-danger" onClick={handleConfirmDelete} style={{ padding: '4px 12px' }}>
+                            <Trash2 size={14} /> Delete
+                        </button>
+                    </div>
+                </div>
+            )}
 
             {selectedGoalForModal && (
                 <GoalDetailsModal
@@ -227,5 +220,5 @@ const GoalCanvasInner = ({ onSelectedNodeChange, onAutoLayoutReady }) => {
     );
 };
 
-// Main Export: Wraps the Inner component in the Provider
 export default GoalCanvasInner;
+

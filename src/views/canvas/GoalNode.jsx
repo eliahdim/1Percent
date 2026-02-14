@@ -4,31 +4,36 @@ import { ChevronDown, ChevronRight } from 'lucide-react';
 import { useGoalContext } from '../../context/GoalContext';
 import { useSettings } from '../../context/SettingsContext';
 
-const getStatusColor = (status) => {
-    switch (status) {
-        case 'In Progress': return '#f59e0b';
-        case 'Done': return '#10b981';
-        default: return 'var(--bg-secondary)'; // Not Started / Default
-    }
+const STATUS_BG = {
+    'In Progress': 'rgba(245, 158, 11, 0.25)',
+    'Done': 'rgba(16, 185, 129, 0.2)',
 };
 
-const getPriorityBorder = (priority) => {
-    switch (priority) {
-        case 'high': return '4px solid #ef4444';
-        case 'medium': return '4px solid #f59e0b';
-        case 'low': return '4px solid #3b82f6';
-        default: return '1px solid var(--border-subtle)';
-    }
+const STATUS_BORDER = {
+    'In Progress': 'rgba(245, 158, 11, 0.4)',
+    'Done': 'rgba(16, 185, 129, 0.35)',
+};
+
+const getNodeBackground = (status) => {
+    return STATUS_BG[status] || 'rgba(39, 39, 42, 0.85)';
+};
+
+const getNodeBorder = (status) => {
+    return STATUS_BORDER[status] || 'var(--border-subtle)';
+};
+
+const PRIORITY_STYLES = {
+    high: { borderLeft: '4px solid #ef4444' },
+    medium: { borderLeft: '4px solid #f59e0b' },
+    low: { borderLeft: '4px solid #3b82f6' },
 };
 
 const GoalNode = ({ id, data, isConnectable, selected }) => {
     const { updateGoal, toggleCollapse } = useGoalContext();
     const { settings } = useSettings();
-    const [editingField, setEditingField] = useState(null); // 'title' | 'description' | null
+    const [editingField, setEditingField] = useState(null);
     const [editValue, setEditValue] = useState('');
     const [isHovered, setIsHovered] = useState(false);
-
-    const statusColor = getStatusColor(data.status);
 
     const onDoubleClick = useCallback((e, field, initialValue) => {
         e.stopPropagation();
@@ -49,9 +54,8 @@ const GoalNode = ({ id, data, isConnectable, selected }) => {
     }, [editingField, editValue, data, id, updateGoal]);
 
     const onKeyDown = useCallback((evt) => {
-        if (evt.key === 'Enter') {
-            onFinishEdit();
-        }
+        if (evt.key === 'Enter') onFinishEdit();
+        if (evt.key === 'Escape') setEditingField(null);
     }, [onFinishEdit]);
 
     const displayDescription = () => {
@@ -61,133 +65,109 @@ const GoalNode = ({ id, data, isConnectable, selected }) => {
         return data.description.substring(0, maxLength) + '...';
     };
 
-    const priorityBorder = getPriorityBorder(data.priority);
-
+    const progress = Math.round(data.progress || 0);
+    const isDone = progress >= 100;
+    const isHighProgress = progress >= 70;
     const showCollapseButton = data.hasChildren && (isHovered || data.collapsed);
+
+    // Build class list
+    const nodeClasses = [
+        'goal-node',
+        data.isRoot ? 'goal-node--root' : 'goal-node--child',
+        selected && 'goal-node--selected',
+        isDone && 'goal-node--done',
+    ].filter(Boolean).join(' ');
+
+    // Priority left-border style
+    const priorityStyle = PRIORITY_STYLES[data.priority] || {};
 
     return (
         <div
+            className={nodeClasses}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
             style={{
-                padding: data.isRoot ? '20px 30px' : '10px 15px',
-                borderRadius: '12px',
-                background: statusColor,
-                border: priorityBorder,
-                color: 'var(--text-primary)',
-                minWidth: data.isRoot ? '220px' : '160px',
-                textAlign: 'center',
+                background: getNodeBackground(data.status),
+                border: `1px solid ${getNodeBorder(data.status)}`,
                 boxShadow: selected
-                    ? '0 0 0 2px white, 0 0 20px rgba(255,255,255,0.4)'
-                    : '0 4px 6px rgba(0,0,0,0.3)',
-                fontSize: data.isRoot ? '1.1rem' : '0.9rem',
-                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                cursor: 'default',
-                position: 'relative'
+                    ? '0 0 0 2px white, 0 0 25px rgba(255,255,255,0.3)'
+                    : 'var(--shadow-md)',
+                ...priorityStyle,
             }}
+            role="treeitem"
+            aria-label={`Goal: ${data.label}, Progress: ${progress}%, Status: ${data.status || 'Not Started'}`}
         >
             <Handle
                 type="target"
                 position={Position.Top}
                 isConnectable={isConnectable}
-                style={{ background: 'var(--text-muted)' }}
+                style={{ background: 'var(--text-muted)', width: 8, height: 8 }}
             />
 
             {/* Status Badge */}
             {settings.showStatusLabels && (
-                <div style={{
-                    position: 'absolute',
-                    top: '-10px',
-                    right: '10px',
-                    fontSize: '0.65rem',
-                    background: 'rgba(0,0,0,0.6)',
-                    backdropFilter: 'blur(4px)',
-                    padding: '2px 8px',
-                    borderRadius: '10px',
-                    fontWeight: 'bold',
-                    color: 'white',
-                    border: '1px solid rgba(255,255,255,0.2)',
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
-                }}>
+                <div className="status-badge" aria-hidden="true">
                     {data.status || 'Not Started'}
                 </div>
             )}
 
-            {/* Title Section */}
+            {/* Title */}
             <div style={{
-                marginBottom: settings.showDescriptions && (data.description || editingField === 'description') ? '8px' : '0',
+                marginBottom: settings.showDescriptions && (data.description || editingField === 'description') ? 'var(--space-2)' : '0',
                 display: 'flex',
                 justifyContent: 'center'
             }}>
                 {editingField === 'title' ? (
                     <input
-                        className="nodrag"
+                        className="nodrag node-edit-input"
                         autoFocus
                         value={editValue}
                         onChange={(e) => setEditValue(e.target.value)}
                         onBlur={onFinishEdit}
                         onKeyDown={onKeyDown}
+                        aria-label="Edit goal title"
                         style={{
                             width: `${Math.max(editValue.length, 1)}ch`,
                             minWidth: '60px',
                             maxWidth: '100%',
                             boxSizing: 'content-box',
-                            background: 'rgba(0,0,0,0.2)',
-                            border: '1px solid rgba(255,255,255,0.3)',
-                            color: 'white',
-                            borderRadius: '4px',
-                            padding: '2px 8px',
-                            fontSize: 'inherit',
-                            fontWeight: 'bold',
-                            textAlign: 'center',
-                            outline: 'none'
                         }}
                     />
                 ) : (
                     <strong
                         onDoubleClick={(e) => onDoubleClick(e, 'title', data.label)}
                         style={{ cursor: 'text', display: 'inline-block' }}
+                        title="Double-click to edit title"
                     >
                         {data.label}
                     </strong>
                 )}
             </div>
 
-            {/* Description Section */}
+            {/* Description */}
             {settings.showDescriptions && (
                 <div style={{ display: 'flex', justifyContent: 'center' }}>
                     {editingField === 'description' ? (
                         <textarea
-                            className="nodrag"
+                            className="nodrag node-edit-textarea"
                             autoFocus
                             value={editValue}
                             onChange={(e) => setEditValue(e.target.value)}
                             onBlur={onFinishEdit}
                             onKeyDown={onKeyDown}
-                            style={{
-                                width: '90%',
-                                background: 'rgba(0,0,0,0.2)',
-                                border: '1px solid rgba(255,255,255,0.3)',
-                                color: 'rgba(255,255,255,0.8)',
-                                borderRadius: '4px',
-                                padding: '4px',
-                                fontSize: '0.75rem',
-                                textAlign: 'center',
-                                outline: 'none',
-                                resize: 'none',
-                                minHeight: '40px'
-                            }}
+                            aria-label="Edit goal description"
                         />
                     ) : (
                         <div
                             onDoubleClick={(e) => onDoubleClick(e, 'description', data.description)}
                             style={{
-                                fontSize: data.isRoot ? '0.85rem' : '0.75rem',
-                                color: 'rgba(255,255,255,0.8)',
+                                fontSize: data.isRoot ? 'var(--text-sm)' : 'var(--text-xs)',
+                                color: 'rgba(255,255,255,0.75)',
                                 minHeight: '10px',
                                 cursor: 'text',
                                 display: 'inline-block'
                             }}
+                            title="Double-click to edit description"
                         >
                             {displayDescription()}
                         </div>
@@ -196,68 +176,40 @@ const GoalNode = ({ id, data, isConnectable, selected }) => {
             )}
 
             {/* Progress Bar */}
-            <div style={{
-                marginTop: '10px',
-                width: '100%',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center'
-            }}>
-                <div style={{
-                    width: '100%',
-                    height: '6px',
-                    backgroundColor: 'rgba(0,0,0,0.3)',
-                    borderRadius: '3px',
-                    overflow: 'hidden',
-                    position: 'relative'
-                }}>
-                    <div style={{
-                        width: `${data.progress || 0}%`,
-                        height: '100%',
-                        backgroundColor: 'white',
-                        transition: 'width 0.5s ease-in-out'
-                    }} />
+            <div style={{ marginTop: 'var(--space-3)', width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <div
+                    className="progress-bar-track"
+                    role="progressbar"
+                    aria-valuenow={progress}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-label={`Goal progress: ${progress}%`}
+                >
+                    <div
+                        className={`progress-bar-fill${isHighProgress ? ' progress-bar-fill--high' : ''}`}
+                        style={{ width: `${progress}%` }}
+                    />
                 </div>
-                <div style={{
-                    fontSize: '0.7rem',
-                    marginTop: '2px',
-                    opacity: 0.8,
-                    fontWeight: 'bold'
-                }}>
-                    {Math.round(data.progress || 0)}%
+                <div className="progress-bar-label">
+                    {progress}%
                 </div>
             </div>
 
             {/* Collapse Toggle */}
             {showCollapseButton && (
                 <button
-                    className="nodrag"
+                    className="nodrag collapse-btn"
                     onClick={(e) => {
                         e.stopPropagation();
                         toggleCollapse(id, data.collapsed);
                     }}
-                    style={{
-                        position: 'absolute',
-                        bottom: '-12px',
-                        left: '50%',
-                        transform: 'translateX(-50%)',
-                        background: 'rgba(0,0,0,0.7)',
-                        border: '1px solid rgba(255,255,255,0.2)',
-                        color: 'white',
-                        borderRadius: '12px',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '4px',
-                        padding: '2px 8px',
-                        fontSize: '0.65rem',
-                        fontWeight: 'bold',
-                        zIndex: 10,
-                        backdropFilter: 'blur(4px)',
-                        transition: 'all 0.2s ease'
-                    }}
+                    aria-label={data.collapsed
+                        ? `Expand branch (${data.childCount} items)`
+                        : 'Collapse branch'
+                    }
+                    aria-expanded={!data.collapsed}
                 >
-                    {data.collapsed ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
+                    {data.collapsed ? <ChevronRight size={12} aria-hidden="true" /> : <ChevronDown size={12} aria-hidden="true" />}
                     {data.collapsed && <span>{data.childCount}</span>}
                 </button>
             )}
@@ -267,7 +219,7 @@ const GoalNode = ({ id, data, isConnectable, selected }) => {
                     type="source"
                     position={Position.Bottom}
                     isConnectable={isConnectable}
-                    style={{ background: 'var(--text-muted)' }}
+                    style={{ background: 'var(--text-muted)', width: 8, height: 8 }}
                 />
             )}
         </div>

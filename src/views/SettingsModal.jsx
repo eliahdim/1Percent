@@ -1,179 +1,150 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { X, Eye, EyeOff } from 'lucide-react';
 import { useSettings } from '../context/SettingsContext';
 
 const SettingsModal = ({ onClose }) => {
     const { settings, updateSettings } = useSettings();
+    const dialogRef = useRef(null);
+
+    // Focus trap + Escape key
+    useEffect(() => {
+        const dialog = dialogRef.current;
+        if (!dialog) return;
+
+        // Focus the dialog container
+        dialog.focus();
+
+        const handleKeyDown = (e) => {
+            if (e.key === 'Escape') {
+                onClose();
+                return;
+            }
+
+            if (e.key === 'Tab') {
+                const focusable = dialog.querySelectorAll(
+                    'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+                );
+                const first = focusable[0];
+                const last = focusable[focusable.length - 1];
+
+                if (e.shiftKey) {
+                    if (document.activeElement === first) {
+                        e.preventDefault();
+                        last.focus();
+                    }
+                } else {
+                    if (document.activeElement === last) {
+                        e.preventDefault();
+                        first.focus();
+                    }
+                }
+            }
+        };
+
+        document.addEventListener('keydown', handleKeyDown);
+        return () => document.removeEventListener('keydown', handleKeyDown);
+    }, [onClose]);
 
     return (
-        <div style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.7)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 2000,
-            backdropFilter: 'blur(4px)'
-        }} onClick={onClose}>
-            <div style={{
-                backgroundColor: 'var(--bg-secondary)',
-                width: '400px',
-                maxWidth: '90%',
-                borderRadius: '12px',
-                border: '1px solid var(--border-subtle)',
-                boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.5)',
-                display: 'flex',
-                flexDirection: 'column'
-            }} onClick={e => e.stopPropagation()}>
+        <div
+            className="modal-overlay"
+            onClick={onClose}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="settings-title"
+            style={{ zIndex: 2000 }}
+        >
+            <div
+                ref={dialogRef}
+                className="modal-panel"
+                style={{ width: '420px', maxWidth: '90%' }}
+                onClick={e => e.stopPropagation()}
+                tabIndex={-1}
+            >
                 {/* Header */}
-                <div style={{
-                    padding: '20px',
-                    borderBottom: '1px solid var(--border-subtle)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between'
-                }}>
-                    <h2 style={{ margin: 0, fontSize: '1.25rem', color: 'var(--text-primary)' }}>Settings</h2>
+                <div className="modal-header">
+                    <h2 id="settings-title" style={{ margin: 0, fontSize: 'var(--text-xl)', fontWeight: 'var(--font-bold)' }}>
+                        Settings
+                    </h2>
                     <button
+                        className="btn btn-ghost btn-icon"
                         onClick={onClose}
-                        style={{
-                            background: 'transparent',
-                            border: 'none',
-                            color: 'var(--text-muted)',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center'
-                        }}
+                        aria-label="Close settings"
                     >
                         <X size={20} />
                     </button>
                 </div>
 
                 {/* Content */}
-                <div style={{ padding: '24px' }}>
-                    <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        padding: '12px',
-                        background: 'var(--bg-tertiary)',
-                        borderRadius: '8px',
-                        border: '1px solid var(--border-subtle)'
-                    }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                            {settings.showDescriptions ? <Eye size={20} color="var(--accent-primary)" /> : <EyeOff size={20} color="var(--text-muted)" />}
+                <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+
+                    {/* Show Descriptions Toggle */}
+                    <div className="settings-item">
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
+                            {settings.showDescriptions
+                                ? <Eye size={20} color="var(--accent-primary)" aria-hidden="true" />
+                                : <EyeOff size={20} color="var(--text-muted)" aria-hidden="true" />
+                            }
                             <div>
-                                <div style={{ fontWeight: '600', color: 'var(--text-primary)' }}>Show Descriptions</div>
-                                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Display goal descriptions on the canvas</div>
+                                <div className="settings-item-label" id="toggle-desc-label">Show Descriptions</div>
+                                <div className="settings-item-desc" id="toggle-desc-help">Display goal descriptions on the canvas</div>
                             </div>
                         </div>
-                        <label className="switch" style={{ position: 'relative', display: 'inline-block', width: '44px', height: '24px' }}>
+                        <label className="toggle-track">
                             <input
                                 type="checkbox"
                                 checked={settings.showDescriptions}
                                 onChange={(e) => updateSettings({ showDescriptions: e.target.checked })}
-                                style={{ opacity: 0, width: 0, height: 0 }}
+                                aria-labelledby="toggle-desc-label"
+                                aria-describedby="toggle-desc-help"
                             />
-                            <span style={{
-                                position: 'absolute',
-                                cursor: 'pointer',
-                                top: 0,
-                                left: 0,
-                                right: 0,
-                                bottom: 0,
-                                backgroundColor: settings.showDescriptions ? 'var(--accent-primary)' : '#444',
-                                transition: '.4s',
-                                borderRadius: '24px'
-                            }}>
-                                <span style={{
-                                    position: 'absolute',
-                                    content: '""',
-                                    height: '18px',
-                                    width: '18px',
-                                    left: '3px',
-                                    bottom: '3px',
-                                    backgroundColor: 'white',
-                                    transition: '.4s',
-                                    borderRadius: '50%',
-                                    transform: settings.showDescriptions ? 'translateX(20px)' : 'translateX(0)'
-                                }}></span>
-                            </span>
+                            <span className="toggle-slider" />
                         </label>
                     </div>
 
-                    {/* Show Status Labels */}
-                    <div style={{
-                        marginTop: '16px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        padding: '12px',
-                        background: 'var(--bg-tertiary)',
-                        borderRadius: '8px',
-                        border: '1px solid var(--border-subtle)'
-                    }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                            {settings.showStatusLabels ? <Eye size={20} color="var(--accent-primary)" /> : <EyeOff size={20} color="var(--text-muted)" />}
+                    {/* Show Status Labels Toggle */}
+                    <div className="settings-item">
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
+                            {settings.showStatusLabels
+                                ? <Eye size={20} color="var(--accent-primary)" aria-hidden="true" />
+                                : <EyeOff size={20} color="var(--text-muted)" aria-hidden="true" />
+                            }
                             <div>
-                                <div style={{ fontWeight: '600', color: 'var(--text-primary)' }}>Show Status Labels</div>
-                                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Display status badges on goal nodes</div>
+                                <div className="settings-item-label" id="toggle-status-label">Show Status Labels</div>
+                                <div className="settings-item-desc" id="toggle-status-help">Display status badges on goal nodes</div>
                             </div>
                         </div>
-                        <label className="switch" style={{ position: 'relative', display: 'inline-block', width: '44px', height: '24px' }}>
+                        <label className="toggle-track">
                             <input
                                 type="checkbox"
                                 checked={settings.showStatusLabels}
                                 onChange={(e) => updateSettings({ showStatusLabels: e.target.checked })}
-                                style={{ opacity: 0, width: 0, height: 0 }}
+                                aria-labelledby="toggle-status-label"
+                                aria-describedby="toggle-status-help"
                             />
-                            <span style={{
-                                position: 'absolute',
-                                cursor: 'pointer',
-                                top: 0,
-                                left: 0,
-                                right: 0,
-                                bottom: 0,
-                                backgroundColor: settings.showStatusLabels ? 'var(--accent-primary)' : '#444',
-                                transition: '.4s',
-                                borderRadius: '24px'
-                            }}>
-                                <span style={{
-                                    position: 'absolute',
-                                    content: '""',
-                                    height: '18px',
-                                    width: '18px',
-                                    left: '3px',
-                                    bottom: '3px',
-                                    backgroundColor: 'white',
-                                    transition: '.4s',
-                                    borderRadius: '50%',
-                                    transform: settings.showStatusLabels ? 'translateX(20px)' : 'translateX(0)'
-                                }}></span>
-                            </span>
+                            <span className="toggle-slider" />
                         </label>
                     </div>
 
-                    {/* Max Description Length */}
-                    <div style={{
-                        marginTop: '16px',
-                        padding: '12px',
-                        background: 'var(--bg-tertiary)',
-                        borderRadius: '8px',
-                        border: '1px solid var(--border-subtle)',
-                        opacity: settings.showDescriptions ? 1 : 0.5,
-                        pointerEvents: settings.showDescriptions ? 'auto' : 'none',
-                        transition: 'opacity 0.3s ease'
-                    }}>
-                        <div style={{ marginBottom: '12px' }}>
-                            <div style={{ fontWeight: '600', color: 'var(--text-primary)', display: 'flex', justifyContent: 'space-between' }}>
-                                <span>Description Length</span>
-                                <span style={{ color: 'var(--accent-primary)' }}>{settings.maxDescriptionLength} chars</span>
+                    {/* Max Description Length Slider */}
+                    <div
+                        className="settings-item"
+                        style={{
+                            flexDirection: 'column',
+                            alignItems: 'stretch',
+                            opacity: settings.showDescriptions ? 1 : 0.5,
+                            pointerEvents: settings.showDescriptions ? 'auto' : 'none',
+                            transition: 'opacity 0.3s var(--ease-out)'
+                        }}
+                    >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 'var(--space-3)' }}>
+                            <div>
+                                <div className="settings-item-label" id="slider-desc-label">Description Length</div>
+                                <div className="settings-item-desc" id="slider-desc-help">How much description to show in the tree</div>
                             </div>
-                            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>How much description to show in the tree</div>
+                            <span style={{ color: 'var(--accent-primary)', fontWeight: 'var(--font-bold)', fontSize: 'var(--text-sm)' }}>
+                                {settings.maxDescriptionLength} chars
+                            </span>
                         </div>
                         <input
                             type="range"
@@ -182,16 +153,18 @@ const SettingsModal = ({ onClose }) => {
                             step="5"
                             value={settings.maxDescriptionLength}
                             onChange={(e) => updateSettings({ maxDescriptionLength: parseInt(e.target.value) })}
+                            aria-labelledby="slider-desc-label"
+                            aria-describedby="slider-desc-help"
+                            aria-valuemin={10}
+                            aria-valuemax={200}
+                            aria-valuenow={settings.maxDescriptionLength}
                             style={{
                                 width: '100%',
                                 accentColor: 'var(--accent-primary)',
-                                height: '6px',
-                                borderRadius: '3px',
-                                outline: 'none',
                                 cursor: 'pointer'
                             }}
                         />
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-xs)', color: 'var(--text-muted)', marginTop: 'var(--space-1)' }}>
                             <span>10</span>
                             <span>200</span>
                         </div>
@@ -199,24 +172,10 @@ const SettingsModal = ({ onClose }) => {
                 </div>
 
                 {/* Footer */}
-                <div style={{
-                    padding: '20px',
-                    borderTop: '1px solid var(--border-subtle)',
-                    display: 'flex',
-                    justifyContent: 'flex-end'
-                }}>
+                <div className="modal-footer">
                     <button
+                        className="btn btn-primary"
                         onClick={onClose}
-                        style={{
-                            padding: '10px 24px',
-                            background: 'var(--accent-primary)',
-                            border: 'none',
-                            color: 'white',
-                            borderRadius: '6px',
-                            cursor: 'pointer',
-                            fontSize: '0.9rem',
-                            fontWeight: '600'
-                        }}
                     >
                         Done
                     </button>

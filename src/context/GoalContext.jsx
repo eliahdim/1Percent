@@ -1,10 +1,15 @@
 import React, { createContext, useContext, useCallback, useEffect, useState } from 'react';
 import { useNodesState, useEdgesState } from '@xyflow/react';
 import { api } from '../services/api';
+import { useToast } from './ToastContext';
 
 const GoalContext = createContext();
 
-export const useGoalContext = () => useContext(GoalContext);
+export const useGoalContext = () => {
+    const context = useContext(GoalContext);
+    if (!context) throw new Error('useGoalContext must be used within a GoalProvider');
+    return context;
+};
 
 // Helper to count all descendants recursively
 const countDescendants = (goal) => {
@@ -68,11 +73,13 @@ const transformData = (goals) => {
 };
 
 export const GoalProvider = ({ children }) => {
+    const { success, error: toastError } = useToast();
     const [nodes, setNodes, onNodesChange] = useNodesState([]);
     const [edges, setEdges, onEdgesChange] = useEdgesState([]);
     const [loading, setLoading] = useState(true);
 
-    const refreshGoals = useCallback(async () => {
+    const refreshGoals = useCallback(async (isInitial = false) => {
+        if (isInitial) setLoading(true);
         try {
             const goals = await api.fetchGoals();
             const { nodes: computedNodes, edges: newEdges } = transformData(goals);
@@ -95,14 +102,15 @@ export const GoalProvider = ({ children }) => {
             setEdges(newEdges);
         } catch (error) {
             console.error("Failed to fetch goals:", error);
+            toastError("Unable to connect to the goal service.");
         } finally {
             setLoading(false);
         }
-    }, [setNodes, setEdges]);
+    }, [setNodes, setEdges, toastError]);
 
     // Initial load
     useEffect(() => {
-        refreshGoals();
+        refreshGoals(true);
     }, [refreshGoals]);
 
     const addGoal = useCallback(async (label, x, y) => {
@@ -114,10 +122,11 @@ export const GoalProvider = ({ children }) => {
                 y: y || 0
             });
             await refreshGoals();
+            success(`Created goal: ${label}`);
         } catch (error) {
-            console.error("Failed to create goal:", error);
+            toastError("Failed to create goal.");
         }
-    }, [refreshGoals]);
+    }, [refreshGoals, success, toastError]);
 
     const addSubgoal = useCallback(async (parentId) => {
         try {
@@ -133,19 +142,24 @@ export const GoalProvider = ({ children }) => {
                 y: parentY + 200
             });
             await refreshGoals();
+            success("Subgoal added successfully.");
         } catch (error) {
-            console.error("Failed to create subgoal:", error);
+            toastError("Failed to add subgoal.");
         }
-    }, [refreshGoals, nodes]);
+    }, [refreshGoals, nodes, success, toastError]);
 
     const updateGoal = useCallback(async (id, updates) => {
         try {
+            const node = nodes.find(n => n.id === id);
             await api.updateGoal(id, updates);
             await refreshGoals();
+            if (updates.title || updates.status || updates.priority) {
+                success(`Updated ${updates.title || node?.data?.label || 'goal'}`);
+            }
         } catch (error) {
-            console.error("Failed to update goal:", error);
+            toastError("Failed to update goal.");
         }
-    }, [refreshGoals]);
+    }, [refreshGoals, nodes, success, toastError]);
 
     const updateGoals = useCallback(async (updatesArray) => {
         try {
@@ -153,6 +167,7 @@ export const GoalProvider = ({ children }) => {
             await refreshGoals();
         } catch (error) {
             console.error("Failed to batch update goals:", error);
+            // No success toast for silent background updates (like move)
         }
     }, [refreshGoals]);
 
@@ -161,18 +176,20 @@ export const GoalProvider = ({ children }) => {
             await api.updateGoal(id, { collapsed: !currentCollapsed });
             await refreshGoals();
         } catch (error) {
-            console.error("Failed to toggle collapse:", error);
+            toastError("Failed to toggle branch.");
         }
-    }, [refreshGoals]);
+    }, [refreshGoals, toastError]);
 
     const deleteGoal = useCallback(async (id) => {
         try {
+            const node = nodes.find(n => n.id === id);
             await api.deleteGoal(id);
             await refreshGoals();
+            success(`Deleted ${node?.data?.label || 'goal'}`);
         } catch (error) {
-            console.error("Failed to delete goal:", error);
+            toastError("Failed to delete goal.");
         }
-    }, [refreshGoals]);
+    }, [refreshGoals, nodes, success, toastError]);
 
     const value = {
         nodes,
@@ -197,3 +214,4 @@ export const GoalProvider = ({ children }) => {
         </GoalContext.Provider>
     );
 };
+

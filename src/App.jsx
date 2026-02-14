@@ -3,8 +3,8 @@ import Sidebar from './views/layout/Sidebar'
 import GoalCanvas from './views/canvas/GoalCanvas'
 import { GoalProvider } from './context/GoalContext'
 import { ReactFlowProvider } from '@xyflow/react'
-
 import SettingsModal from './views/SettingsModal'
+import Toast from './views/Toast'
 
 function App() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
@@ -36,6 +36,9 @@ function App() {
 
         {isSettingsOpen && <SettingsModal onClose={() => setIsSettingsOpen(false)} />}
       </ReactFlowProvider>
+
+      {/* Toast notifications render above everything */}
+      <Toast />
     </GoalProvider>
   )
 }
