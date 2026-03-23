@@ -1,12 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { X, Calendar, Clock } from 'lucide-react';
-
-const STATUS_OPTIONS = ['Not Started', 'In Progress', 'Done'];
-const STATUS_COLORS = {
-    'Not Started': 'var(--accent-danger)',
-    'In Progress': 'var(--accent-warning)',
-    'Done': 'var(--accent-success)'
-};
+import { DEFAULT_STATUS_COLORS, STATUS_OPTIONS, useSettings } from '../../context/SettingsContext';
 
 const PRIORITY_OPTIONS = [
     { value: 'none', label: 'None', color: 'var(--text-muted)' },
@@ -16,6 +10,7 @@ const PRIORITY_OPTIONS = [
 ];
 
 const GoalDetailsModal = ({ goal, onClose, onUpdate, onDelete }) => {
+    const { settings } = useSettings();
     const [title, setTitle] = useState(goal?.data?.label || '');
     const [description, setDescription] = useState(goal?.data?.description || '');
     const [status, setStatus] = useState(goal?.data?.status || 'Not Started');
@@ -179,7 +174,7 @@ const GoalDetailsModal = ({ goal, onClose, onUpdate, onDelete }) => {
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
                                     {STATUS_OPTIONS.map(opt => {
                                         const isSelected = status === opt;
-                                        const color = STATUS_COLORS[opt];
+                                        const color = settings.statusColors?.[opt] || DEFAULT_STATUS_COLORS[opt];
                                         return (
                                             <button
                                                 key={opt}

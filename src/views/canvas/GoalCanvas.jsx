@@ -12,6 +12,7 @@ import GoalNode from './GoalNode';
 import GoalDetailsModal from './GoalDetailsModal';
 import { getLayoutedElements } from '../../utils/autoLayout';
 import { useGoalContext } from '../../context/GoalContext';
+import { useSettings } from '../../context/SettingsContext';
 import { moveSubtree, getDescendants } from '../../utils/dragLogic';
 import { AlertTriangle, Trash2, X } from 'lucide-react';
 
@@ -25,6 +26,7 @@ const GoalCanvasInner = ({ onSelectedNodeChange, onAutoLayoutReady }) => {
         edges, setEdges, onEdgesChange,
         updateGoal, updateGoals, deleteGoal, loading
     } = useGoalContext();
+    const { settings } = useSettings();
 
     const [selectedGoalForModal, setSelectedGoalForModal] = useState(null);
     const [confirmDeleteNode, setConfirmDeleteNode] = useState(null);
@@ -323,7 +325,7 @@ const GoalCanvasInner = ({ onSelectedNodeChange, onAutoLayoutReady }) => {
                 onNodesDelete={onDeleteNodes}
                 nodeTypes={nodeTypes}
                 fitView
-                colorMode="dark"
+                colorMode={settings.theme === 'light' ? 'light' : 'dark'}
                 style={{ backgroundColor: 'var(--bg-primary)' }}
             >
                 <Controls style={{ fill: 'white' }} />

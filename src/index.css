@@ -84,6 +84,56 @@
 
   /* ── Layout ── */
   --sidebar-width: 280px;
+
+  /* Theme-aware UI surfaces used by nodes and badges */
+  --node-fallback-bg: rgba(39, 39, 42, 0.85);
+  --node-description-color: rgba(255, 255, 255, 0.75);
+  --node-selected-ring: #ffffff;
+  --node-selected-glow: rgba(255, 255, 255, 0.3);
+  --status-badge-bg: rgba(0, 0, 0, 0.65);
+  --status-badge-text: #ffffff;
+  --status-badge-border: rgba(255, 255, 255, 0.15);
+  --progress-track-bg: rgba(0, 0, 0, 0.3);
+  --collapse-btn-bg: rgba(0, 0, 0, 0.75);
+  --collapse-btn-border: rgba(255, 255, 255, 0.15);
+  --collapse-btn-text: #ffffff;
+  --node-input-bg: rgba(0, 0, 0, 0.25);
+  --node-input-border: rgba(255, 255, 255, 0.3);
+  --node-input-text: #ffffff;
+}
+
+[data-theme='light'] {
+  --bg-primary: #f5f7fb;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #eef2f7;
+  --bg-elevated: #e4e9f2;
+
+  --text-primary: #111827;
+  --text-secondary: #4b5563;
+  --text-muted: #6b7280;
+
+  --border-subtle: #d6dde8;
+  --border-focus: #2563eb;
+
+  --shadow-sm: 0 1px 2px rgba(17, 24, 39, 0.1);
+  --shadow-md: 0 4px 8px rgba(17, 24, 39, 0.12);
+  --shadow-lg: 0 10px 18px rgba(17, 24, 39, 0.14);
+  --shadow-xl: 0 20px 28px rgba(17, 24, 39, 0.18);
+
+  --node-fallback-bg: rgba(255, 255, 255, 0.95);
+  --node-description-color: rgba(17, 24, 39, 0.75);
+  --node-selected-ring: #1f2937;
+  --node-selected-glow: rgba(37, 99, 235, 0.22);
+  --status-badge-bg: rgba(17, 24, 39, 0.85);
+  --status-badge-text: #f9fafb;
+  --status-badge-border: rgba(255, 255, 255, 0.25);
+  --progress-track-bg: rgba(17, 24, 39, 0.15);
+  --collapse-btn-bg: rgba(17, 24, 39, 0.88);
+  --collapse-btn-border: rgba(255, 255, 255, 0.2);
+  --collapse-btn-text: #f9fafb;
+  --node-input-bg: rgba(255, 255, 255, 0.8);
+  --node-input-border: rgba(17, 24, 39, 0.2);
+  --node-input-text: #111827;
 }
 
 /* ===================================================================
@@ -472,13 +522,13 @@ textarea.input {
   top: -10px;
   right: 10px;
   font-size: var(--text-xs);
-  background: rgba(0, 0, 0, 0.65);
+  background: var(--status-badge-bg);
   backdrop-filter: blur(6px);
   padding: 2px var(--space-2);
   border-radius: var(--radius-full);
   font-weight: var(--font-bold);
-  color: white;
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: var(--status-badge-text);
+  border: 1px solid var(--status-badge-border);
   box-shadow: var(--shadow-sm);
   pointer-events: none;
 }
@@ -487,7 +537,7 @@ textarea.input {
 .progress-bar-track {
   width: 100%;
   height: 5px;
-  background-color: rgba(0, 0, 0, 0.3);
+  background-color: var(--progress-track-bg);
   border-radius: var(--radius-full);
   overflow: hidden;
   position: relative;
@@ -519,10 +569,10 @@ textarea.input {
   bottom: -12px;
   left: 50%;
   transform: translateX(-50%);
-  background: rgba(0, 0, 0, 0.75);
+  background: var(--collapse-btn-bg);
   backdrop-filter: blur(6px);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  color: white;
+  border: 1px solid var(--collapse-btn-border);
+  color: var(--collapse-btn-text);
   border-radius: var(--radius-full);
   cursor: pointer;
   display: flex;
@@ -542,9 +592,9 @@ textarea.input {
 
 /* Node inline edit input */
 .node-edit-input {
-  background: rgba(0, 0, 0, 0.25);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  color: white;
+  background: var(--node-input-bg);
+  border: 1px solid var(--node-input-border);
+  color: var(--node-input-text);
   border-radius: var(--radius-sm);
   padding: 2px var(--space-2);
   font-size: inherit;
@@ -561,9 +611,9 @@ textarea.input {
 
 .node-edit-textarea {
   width: 90%;
-  background: rgba(0, 0, 0, 0.25);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  color: rgba(255, 255, 255, 0.9);
+  background: var(--node-input-bg);
+  border: 1px solid var(--node-input-border);
+  color: var(--node-input-text);
   border-radius: var(--radius-sm);
   padding: var(--space-1);
   font-size: var(--text-sm);
@@ -809,6 +859,142 @@ textarea.input {
   font-size: var(--text-sm);
   color: var(--text-muted);
   margin-top: 2px;
+}
+
+/* ===================================================================
+   Status Color Picker
+   =================================================================== */
+.status-color-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-2);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
+  background: rgba(0,0,0,0.08);
+}
+
+.status-color-name {
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  font-weight: var(--font-semibold);
+}
+
+.status-color-picker {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.status-color-input {
+  width: 44px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: transparent;
+  cursor: pointer;
+}
+
+/* Improve color input visuals on WebKit/Blink */
+.status-color-input::-webkit-color-swatch-wrapper {
+  padding: 0;
+  border-radius: var(--radius-md);
+}
+.status-color-input::-webkit-color-swatch {
+  border: none;
+  border-radius: var(--radius-md);
+}
+
+.status-color-hex {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  font-weight: var(--font-medium);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+.status-color-reset {
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  border-radius: var(--radius-md);
+  padding: 4px 8px;
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+  cursor: pointer;
+  opacity: 0;
+  transform: translateX(4px);
+  pointer-events: none;
+  transition: opacity var(--duration-fast) var(--ease-out),
+    transform var(--duration-fast) var(--ease-out),
+    background-color var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out);
+}
+
+.status-color-row:hover .status-color-reset,
+.status-color-row:focus-within .status-color-reset {
+  opacity: 1;
+  transform: translateX(0);
+  pointer-events: auto;
+}
+
+.status-color-reset:hover:not(:disabled) {
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+}
+
+.status-color-reset:disabled {
+  cursor: default;
+}
+
+[data-theme='light'] .status-color-row {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+/* Theme segmented control */
+.theme-segment {
+  display: inline-flex;
+  background: var(--bg-primary);
+  border-radius: var(--radius-lg);
+  padding: 3px;
+  gap: 2px;
+  border: 1px solid var(--border-subtle);
+}
+
+.theme-segment__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  font-family: var(--font-family);
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  color: var(--text-muted);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-out);
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.theme-segment__btn:hover:not(.is-active) {
+  color: var(--text-secondary);
+  background: var(--bg-tertiary);
+}
+
+.theme-segment__btn.is-active {
+  background: var(--accent-primary);
+  color: #fff;
+  border-color: transparent;
+  box-shadow: var(--shadow-sm);
+}
+
+.theme-segment__btn:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
 }
 
 /* ===================================================================

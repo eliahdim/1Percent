@@ -2,24 +2,31 @@ import React, { memo, useState, useCallback } from 'react';
 import { Handle, Position } from '@xyflow/react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { useGoalContext } from '../../context/GoalContext';
-import { useSettings } from '../../context/SettingsContext';
+import { DEFAULT_STATUS_COLORS, useSettings } from '../../context/SettingsContext';
 
-const STATUS_BG = {
-    'In Progress': 'rgba(245, 158, 11, 0.25)',
-    'Done': 'rgba(16, 185, 129, 0.2)',
+const STATUS_BG_ALPHA = {
+    'Not Started': 0.15,
+    'In Progress': 0.25,
+    'Done': 0.2,
 };
 
-const STATUS_BORDER = {
-    'In Progress': 'rgba(245, 158, 11, 0.4)',
-    'Done': 'rgba(16, 185, 129, 0.35)',
+const STATUS_BORDER_ALPHA = {
+    'Not Started': 0.35,
+    'In Progress': 0.4,
+    'Done': 0.35,
 };
 
-const getNodeBackground = (status) => {
-    return STATUS_BG[status] || 'rgba(39, 39, 42, 0.85)';
-};
+const hexToRgba = (hex, alpha) => {
+    if (!hex || typeof hex !== 'string') return `rgba(0,0,0,${alpha})`;
+    const raw = hex.trim().replace('#', '');
+    if (![3, 6].includes(raw.length)) return `rgba(0,0,0,${alpha})`;
 
-const getNodeBorder = (status) => {
-    return STATUS_BORDER[status] || 'var(--border-subtle)';
+    const expanded = raw.length === 3 ? raw.split('').map(ch => ch + ch).join('') : raw;
+    const num = parseInt(expanded, 16);
+    const r = (num >> 16) & 255;
+    const g = (num >> 8) & 255;
+    const b = num & 255;
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 };
 
 const PRIORITY_STYLES = {
@@ -81,16 +88,22 @@ const GoalNode = ({ id, data, isConnectable, selected }) => {
     // Priority left-border style
     const priorityStyle = PRIORITY_STYLES[data.priority] || {};
 
+    // Status-tinted card background/border (driven by Settings).
+    const statusKey = data.status || 'Not Started';
+    const statusHex = settings.statusColors?.[statusKey] || DEFAULT_STATUS_COLORS[statusKey] || '#3b82f6';
+    const statusBg = hexToRgba(statusHex, STATUS_BG_ALPHA[statusKey] ?? 0.2);
+    const statusBorder = hexToRgba(statusHex, STATUS_BORDER_ALPHA[statusKey] ?? 0.35);
+
     return (
         <div
             className={nodeClasses}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
             style={{
-                background: getNodeBackground(data.status),
-                border: `1px solid ${getNodeBorder(data.status)}`,
+                background: statusBg,
+                border: `1px solid ${statusBorder}`,
                 boxShadow: selected
-                    ? '0 0 0 2px white, 0 0 25px rgba(255,255,255,0.3)'
+                    ? '0 0 0 2px var(--node-selected-ring), 0 0 25px var(--node-selected-glow)'
                     : 'var(--shadow-md)',
                 ...priorityStyle,
             }}
@@ -162,7 +175,7 @@ const GoalNode = ({ id, data, isConnectable, selected }) => {
                             onDoubleClick={(e) => onDoubleClick(e, 'description', data.description)}
                             style={{
                                 fontSize: data.isRoot ? 'var(--text-sm)' : 'var(--text-xs)',
-                                color: 'rgba(255,255,255,0.75)',
+                                color: 'var(--node-description-color)',
                                 minHeight: '10px',
                                 cursor: 'text',
                                 display: 'inline-block'
