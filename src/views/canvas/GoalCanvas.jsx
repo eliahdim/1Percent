@@ -29,6 +29,11 @@ const GoalCanvasInner = ({ onSelectedNodeChange, onAutoLayoutReady }) => {
     const [selectedGoalForModal, setSelectedGoalForModal] = useState(null);
     const [confirmDeleteNode, setConfirmDeleteNode] = useState(null);
 
+    // Drag animation tuning.
+    // Higher values = faster catch-up (less "lag" feel).
+    const DRAG_LAG_SPEED = 12;
+    const DRAG_POSITION_EPSILON = 0.5;
+
     const onNodeDoubleClick = useCallback((event, node) => {
         setSelectedGoalForModal(node);
     }, []);
@@ -36,6 +41,28 @@ const GoalCanvasInner = ({ onSelectedNodeChange, onAutoLayoutReady }) => {
     const { fitView } = useReactFlow();
     const draggingNodeRef = useRef(null);
     const lastPosRef = useRef(null);
+
+    // Keep the latest state accessible from the animation loop.
+    const nodesRef = useRef(nodes);
+    const edgesRef = useRef(edges);
+    useEffect(() => { nodesRef.current = nodes; }, [nodes]);
+    useEffect(() => { edgesRef.current = edges; }, [edges]);
+
+    // During dragging, we keep two positions:
+    // - targetNodesRef: updated immediately from React Flow drag events
+    // - renderNodesRef: interpolated towards targetNodesRef for a "lag/catch-up" effect
+    const targetNodesRef = useRef(null);
+    const renderNodesRef = useRef(null);
+    const movingNodeIdsRef = useRef(new Set());
+    const isDraggingRef = useRef(false);
+    const rafRef = useRef(null);
+    const lastFrameTimeRef = useRef(null);
+
+    useEffect(() => {
+        return () => {
+            if (rafRef.current) cancelAnimationFrame(rafRef.current);
+        };
+    }, []);
 
     const onConnect = useCallback(
         (params) => setEdges((eds) => addEdge(params, eds)),
@@ -80,7 +107,101 @@ const GoalCanvasInner = ({ onSelectedNodeChange, onAutoLayoutReady }) => {
     const onNodeDragStart = (event, node) => {
         draggingNodeRef.current = node;
         lastPosRef.current = { ...node.position };
+
+        isDraggingRef.current = true;
+        lastFrameTimeRef.current = null;
+
+        // Clone current positions into our animation buffers.
+        // (We only interpolate positions; everything else can be kept as-is.)
+        targetNodesRef.current = nodesRef.current.map(n => ({
+            ...n,
+            position: { ...n.position }
+        }));
+        renderNodesRef.current = nodesRef.current.map(n => ({
+            ...n,
+            position: { ...n.position }
+        }));
+
+        // Precompute which nodes are expected to move during this drag.
+        const descendants = getDescendants(nodesRef.current, edgesRef.current, node.id);
+        movingNodeIdsRef.current = new Set([node.id, ...Array.from(descendants)]);
     };
+
+    const animateDragStep = useCallback((timestamp) => {
+        if (!targetNodesRef.current || !renderNodesRef.current) {
+            rafRef.current = null;
+            return;
+        }
+
+        const renderNodes = renderNodesRef.current;
+        const targetNodes = targetNodesRef.current;
+
+        const dtMs = lastFrameTimeRef.current == null ? 16 : (timestamp - lastFrameTimeRef.current);
+        lastFrameTimeRef.current = timestamp;
+
+        // Exponential smoothing to keep animation stable across different frame rates.
+        const alpha = 1 - Math.exp(-DRAG_LAG_SPEED * (dtMs / 1000));
+
+        const targetPosById = new Map(targetNodes.map(n => [n.id, n.position]));
+        const draggedId = draggingNodeRef.current?.id;
+
+        let maxRemaining = 0;
+        const nextNodes = renderNodes.map((n) => {
+            const targetPos = targetPosById.get(n.id);
+            if (!targetPos) return n;
+
+            // Keep the actively dragged node under the cursor for a predictable feel.
+            if (draggedId && n.id === draggedId) {
+                return {
+                    ...n,
+                    position: { x: targetPos.x, y: targetPos.y }
+                };
+            }
+
+            // Only animate the moving subtree.
+            if (!movingNodeIdsRef.current.has(n.id)) return n;
+
+            const cx = n.position.x;
+            const cy = n.position.y;
+
+            const nx = cx + (targetPos.x - cx) * alpha;
+            const ny = cy + (targetPos.y - cy) * alpha;
+            maxRemaining = Math.max(
+                maxRemaining,
+                Math.abs(targetPos.x - nx),
+                Math.abs(targetPos.y - ny)
+            );
+
+            return {
+                ...n,
+                position: { x: nx, y: ny }
+            };
+        });
+
+        renderNodesRef.current = nextNodes;
+        setNodes(nextNodes);
+
+        // While the user is dragging, we keep animating.
+        // Once dragging stops, we "snap" by continuing until close enough.
+        if (isDraggingRef.current) {
+            rafRef.current = requestAnimationFrame(animateDragStep);
+            return;
+        }
+
+        if (maxRemaining <= DRAG_POSITION_EPSILON) {
+            // Ensure final positions match the most recent drag targets.
+            const finalNodes = targetNodesRef.current.map(n => ({
+                ...n,
+                position: { ...n.position }
+            }));
+            renderNodesRef.current = finalNodes;
+            setNodes(finalNodes);
+            rafRef.current = null;
+            return;
+        }
+
+        rafRef.current = requestAnimationFrame(animateDragStep);
+    }, [setNodes]);
 
     const onNodeDrag = (event, node) => {
         const delta = {
@@ -88,18 +209,44 @@ const GoalCanvasInner = ({ onSelectedNodeChange, onAutoLayoutReady }) => {
             y: node.position.y - lastPosRef.current.y
         };
         lastPosRef.current = { ...node.position };
-        setNodes((nds) => moveSubtree(nds, edges, node, delta));
+
+        // Update the target positions immediately.
+        // Then the animation loop interpolates render positions behind it.
+        targetNodesRef.current = moveSubtree(
+            targetNodesRef.current,
+            edgesRef.current,
+            node,
+            delta
+        );
+
+        if (rafRef.current == null) {
+            rafRef.current = requestAnimationFrame(animateDragStep);
+        }
     };
 
     const onNodeDragStop = (event, node) => {
         const draggedNode = draggingNodeRef.current;
+
+        isDraggingRef.current = false;
         if (draggedNode) {
-            const descendants = getDescendants(nodes, edges, draggedNode.id);
+            // Snap to the latest drag targets so persistence matches what you see.
+            const finalNodes = targetNodesRef.current?.map(n => ({
+                ...n,
+                position: { ...n.position }
+            }));
+
+            if (finalNodes) {
+                renderNodesRef.current = finalNodes;
+                setNodes(finalNodes);
+            }
+
+            const nodesForUpdate = finalNodes || nodesRef.current;
+            const descendants = getDescendants(nodesForUpdate, edgesRef.current, draggedNode.id);
             const nodesToUpdateIds = [draggedNode.id, ...Array.from(descendants)];
             const updates = [];
 
             nodesToUpdateIds.forEach(nodeId => {
-                const currentNode = nodes.find(n => n.id === nodeId);
+                const currentNode = nodesForUpdate.find(n => n.id === nodeId);
                 if (currentNode) {
                     updates.push({
                         id: currentNode.id,
@@ -113,6 +260,12 @@ const GoalCanvasInner = ({ onSelectedNodeChange, onAutoLayoutReady }) => {
 
             if (updates.length > 0) updateGoals(updates);
         }
+
+        // Stop any in-flight animation and clear drag state.
+        if (rafRef.current) cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+        lastFrameTimeRef.current = null;
+        movingNodeIdsRef.current = new Set();
         draggingNodeRef.current = null;
         lastPosRef.current = null;
     };
