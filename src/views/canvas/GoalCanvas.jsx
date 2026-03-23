@@ -272,11 +272,12 @@ const GoalCanvasInner = ({ onSelectedNodeChange, onAutoLayoutReady }) => {
         lastPosRef.current = null;
     };
 
-    const onDeleteNodes = useCallback((deletedNodes) => {
-        if (deletedNodes.length > 0) {
-            // Instead of window.confirm, show our custom UI
-            setConfirmDeleteNode(deletedNodes[0]);
+    const onBeforeDelete = useCallback(({ nodes: nodesToDelete = [] }) => {
+        if (nodesToDelete.length > 0) {
+            // Block immediate UI removal and ask first.
+            setConfirmDeleteNode(nodesToDelete[0]);
         }
+        return false;
     }, []);
 
     const selectedNode = useMemo(() => nodes.find(n => n.selected), [nodes]);
@@ -295,6 +296,34 @@ const GoalCanvasInner = ({ onSelectedNodeChange, onAutoLayoutReady }) => {
             onAutoLayoutReady((...args) => onLayoutRef.current(...args));
         }
     }, [onAutoLayoutReady]);
+
+    useEffect(() => {
+        const onKeyDown = (event) => {
+            const key = event.key;
+            if (key !== 'Backspace' && key !== 'Delete') return;
+
+            const target = event.target;
+            const isEditableTarget =
+                target instanceof HTMLElement &&
+                (target.isContentEditable ||
+                    target.tagName === 'INPUT' ||
+                    target.tagName === 'TEXTAREA' ||
+                    target.tagName === 'SELECT');
+
+            if (isEditableTarget) return;
+
+            if (!selectedNode || confirmDeleteNode) {
+                event.preventDefault();
+                return;
+            }
+
+            event.preventDefault();
+            setConfirmDeleteNode(selectedNode);
+        };
+
+        window.addEventListener('keydown', onKeyDown);
+        return () => window.removeEventListener('keydown', onKeyDown);
+    }, [selectedNode, confirmDeleteNode]);
 
     const handleConfirmDelete = () => {
         if (confirmDeleteNode) {
@@ -322,7 +351,8 @@ const GoalCanvasInner = ({ onSelectedNodeChange, onAutoLayoutReady }) => {
                 onNodeDrag={onNodeDrag}
                 onNodeDragStop={onNodeDragStop}
                 onNodeDoubleClick={onNodeDoubleClick}
-                onNodesDelete={onDeleteNodes}
+                onBeforeDelete={onBeforeDelete}
+                deleteKeyCode={null}
                 nodeTypes={nodeTypes}
                 fitView
                 colorMode={settings.theme === 'light' ? 'light' : 'dark'}
